@@ -1,0 +1,4 @@
+exit_reason,trades,win_rate,total_pnl,avg_pnl,avg_win,avg_loss,pf
+take_profit,32,100.0,6320.55,197.52,197.52,0.0,999.0
+time_exit,68,77.9,3829.19,56.31,79.66,-26.2,10.74
+stop_loss,113,0.0,-11158.45,-98.75,0.0,-98.75,0.0

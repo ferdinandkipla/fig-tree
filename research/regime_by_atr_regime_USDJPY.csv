@@ -1,0 +1,4 @@
+atr_regime,trades,win_rate,total_pnl,avg_pnl,avg_win,avg_loss,pf
+low_vol,70,44.3,904.28,12.92,142.18,-89.83,1.26
+med_vol,73,37.0,-836.48,-11.46,120.72,-89.04,0.8
+high_vol,70,38.6,-1076.51,-15.38,106.5,-91.91,0.73

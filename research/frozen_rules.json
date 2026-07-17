@@ -1,0 +1,217 @@
+{
+  "frozen_at": "2026-06-08T23:22:01.122726",
+  "train_window": [
+    "2019-01-01",
+    "2022-01-01"
+  ],
+  "test_window": [
+    "2022-01-01",
+    "2025-01-01"
+  ],
+  "rules": {
+    "USDJPY": {
+      "symbol": "USDJPY",
+      "adx_ceiling": 25.0,
+      "exclude_high_vol": true,
+      "_train_evidence": {
+        "adx": {
+          "<20": {
+            "label": "ADX <20",
+            "trades": 0,
+            "pf": 0.0,
+            "wr": 0.0,
+            "expectancy": 0.0,
+            "total_pnl": 0.0
+          },
+          "20-25": {
+            "label": "ADX 20-25",
+            "trades": 38,
+            "pf": 1.885,
+            "wr": 50.0,
+            "expectancy": 36.75,
+            "total_pnl": 1396.38
+          },
+          "25-35": {
+            "label": "ADX 25-35",
+            "trades": 40,
+            "pf": 0.644,
+            "wr": 30.0,
+            "expectancy": -23.59,
+            "total_pnl": -943.75
+          },
+          ">35": {
+            "label": "ADX >35",
+            "trades": 16,
+            "pf": 0.66,
+            "wr": 50.0,
+            "expectancy": -12.69,
+            "total_pnl": -203.09
+          }
+        },
+        "atr": {
+          "low_vol": {
+            "label": "ATR low_vol",
+            "trades": 32,
+            "pf": 1.448,
+            "wr": 50.0,
+            "expectancy": 20.58,
+            "total_pnl": 658.64
+          },
+          "med_vol": {
+            "label": "ATR med_vol",
+            "trades": 31,
+            "pf": 0.96,
+            "wr": 35.5,
+            "expectancy": -2.3,
+            "total_pnl": -71.16
+          },
+          "high_vol": {
+            "label": "ATR high_vol",
+            "trades": 31,
+            "pf": 0.783,
+            "wr": 38.7,
+            "expectancy": -10.9,
+            "total_pnl": -337.94
+          }
+        }
+      },
+      "high_vol_atr_threshold": 0.254
+    },
+    "XAUUSD": {
+      "symbol": "XAUUSD",
+      "adx_ceiling": null,
+      "exclude_high_vol": true,
+      "_train_evidence": {
+        "adx": {
+          "<20": {
+            "label": "ADX <20",
+            "trades": 0,
+            "pf": 0.0,
+            "wr": 0.0,
+            "expectancy": 0.0,
+            "total_pnl": 0.0
+          },
+          "20-25": {
+            "label": "ADX 20-25",
+            "trades": 44,
+            "pf": 0.858,
+            "wr": 38.6,
+            "expectancy": -7.59,
+            "total_pnl": -334.1
+          },
+          "25-35": {
+            "label": "ADX 25-35",
+            "trades": 35,
+            "pf": 1.283,
+            "wr": 48.6,
+            "expectancy": 12.87,
+            "total_pnl": 450.54
+          },
+          ">35": {
+            "label": "ADX >35",
+            "trades": 20,
+            "pf": 0.435,
+            "wr": 25.0,
+            "expectancy": -29.72,
+            "total_pnl": -594.38
+          }
+        },
+        "atr": {
+          "low_vol": {
+            "label": "ATR low_vol",
+            "trades": 33,
+            "pf": 0.804,
+            "wr": 33.3,
+            "expectancy": -11.78,
+            "total_pnl": -388.76
+          },
+          "med_vol": {
+            "label": "ATR med_vol",
+            "trades": 33,
+            "pf": 1.192,
+            "wr": 45.5,
+            "expectancy": 8.47,
+            "total_pnl": 279.5
+          },
+          "high_vol": {
+            "label": "ATR high_vol",
+            "trades": 33,
+            "pf": 0.764,
+            "wr": 39.4,
+            "expectancy": -11.17,
+            "total_pnl": -368.68
+          }
+        }
+      },
+      "high_vol_atr_threshold": 11.550876666666666
+    },
+    "GBPJPY": {
+      "symbol": "GBPJPY",
+      "adx_ceiling": null,
+      "exclude_high_vol": false,
+      "_train_evidence": {
+        "adx": {
+          "<20": {
+            "label": "ADX <20",
+            "trades": 1,
+            "pf": 0.0,
+            "wr": 0.0,
+            "expectancy": -102.13,
+            "total_pnl": -102.13
+          },
+          "20-25": {
+            "label": "ADX 20-25",
+            "trades": 42,
+            "pf": 1.047,
+            "wr": 42.9,
+            "expectancy": 2.46,
+            "total_pnl": 103.5
+          },
+          "25-35": {
+            "label": "ADX 25-35",
+            "trades": 39,
+            "pf": 0.767,
+            "wr": 30.8,
+            "expectancy": -13.14,
+            "total_pnl": -512.4
+          },
+          ">35": {
+            "label": "ADX >35",
+            "trades": 19,
+            "pf": 1.532,
+            "wr": 47.4,
+            "expectancy": 22.8,
+            "total_pnl": 433.18
+          }
+        },
+        "atr": {
+          "low_vol": {
+            "label": "ATR low_vol",
+            "trades": 34,
+            "pf": 1.118,
+            "wr": 44.1,
+            "expectancy": 6.18,
+            "total_pnl": 210.24
+          },
+          "med_vol": {
+            "label": "ATR med_vol",
+            "trades": 33,
+            "pf": 0.492,
+            "wr": 27.3,
+            "expectancy": -31.39,
+            "total_pnl": -1036.02
+          },
+          "high_vol": {
+            "label": "ATR high_vol",
+            "trades": 34,
+            "pf": 1.502,
+            "wr": 44.1,
+            "expectancy": 22.0,
+            "total_pnl": 747.93
+          }
+        }
+      }
+    }
+  },
+  "hash": "12cd92e4aebe83ddee7a2ea91f14776e88ba596df2ceda02d801afccfe5a699a"
+}
