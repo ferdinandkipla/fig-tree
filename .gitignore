@@ -4,3 +4,11 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .ipynb_checkpoints/
+
+# Chart images are derived/visual artifacts, not canonical research data.
+# The ledger's reproducibility guarantee is over trades_*.csv (hashed),
+# not over PNGs — matplotlib embeds its own version string in PNG
+# metadata, so byte-identical output across environments/versions isn't
+# achievable (or meaningful) for these files. Regenerate via main.py.
+research/equity_*.png
+research/charts/
