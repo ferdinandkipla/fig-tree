@@ -19,6 +19,13 @@ def prepare(df: pd.DataFrame, symbol: str = "USDJPY") -> pd.DataFrame:
     df["adx"]      = adx(df["high"], df["low"], df["close"], ADX_PERIOD)
     df["atr"]      = atr(df["high"], df["low"], df["close"], ATR_PERIOD)
 
+    # ── M0: Entry-context features for research ────────────────────────
+    # Captured onto every trade record by the simulator via ENTRY_FEATURES
+    # (core/config.py). These were previously referenced in the trade
+    # schema but never computed — silent NaN on every trade.
+    df["ema_distance"] = (df["close"] - df["ema_fast"]) / df["atr"]      # pullback depth, ATR units
+    df["trend_gap"]    = (df["ema_fast"] - df["ema_slow"]) / df["atr"]  # trend maturity, ATR units
+
     df["signal"]      = entry_signal(df, symbol=symbol)
     df["stop_loss"]   = df["close"] - (STOP_ATR_MULT * df["atr"])
     df["take_profit"] = df["close"] + (RISK_REWARD * STOP_ATR_MULT * df["atr"])
