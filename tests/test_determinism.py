@@ -21,6 +21,7 @@ if "MetaTrader5" not in sys.modules:
     _mt5_stub.TIMEFRAME_H4 = 16388
     sys.modules["MetaTrader5"] = _mt5_stub
 
+import time
 import pytest
 import main as m
 from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES, SEED
@@ -28,18 +29,9 @@ from data.loader import cache_path
 from research.experiment import record, DirtyGitStateError
 
 
-@pytest.mark.slow
-def test_real_backtest_is_deterministic_across_two_runs():
-    # NOTE: deliberately calling research.experiment.record() directly
-    # here, NOT main._log_run_to_ledger(). The latter is a CLI-friendly
-    # wrapper that CATCHES DirtyGitStateError (and FileNotFoundError)
-    # and only prints a warning (so a dirty tree doesn't crash a live
-    # trading/research session). That means a try/except around
-    # _log_run_to_ledger() never fires, and this test would silently
-    # pass by comparing STALE entries from some earlier run instead of
-    # the two runs performed right here. (Caught this exact false-
-    # positive while writing an earlier draft of this test.)
-
+def _run_full_pipeline_and_log():
+    """Runs the REAL backtest for all 3 symbols (regenerating trades_*.csv
+    from scratch) and logs one ledger entry. Returns the ledger entry."""
     all_results = {}
     for symbol in ("USDJPY", "XAUUSD", "GBPJPY"):
         all_results[symbol] = m.run(symbol, export_charts=False)
@@ -54,32 +46,69 @@ def test_real_backtest_is_deterministic_across_two_runs():
         "BACKTEST": BACKTEST, "RISK": RISK,
         "TREND_PULLBACK": TREND_PULLBACK, "ENTRY_FEATURES": ENTRY_FEATURES,
     }
-    # cache_path(), not a hand-built f-string -- must match main.py exactly
-    # (a second, independently-constructed path was a real bug found in
-    # code audit: FileNotFoundError if the two patterns ever diverged).
     data_paths   = {s: str(cache_path(s, BACKTEST["timeframe"])) for s in successful_symbols}
     output_paths = {s: f"research/trades_{s}.csv" for s in successful_symbols}
 
+    return record(strategy="trend_pullback", symbols=successful_symbols,
+                  config_snapshot=config_snapshot, data_paths=data_paths,
+                  output_paths=output_paths, seed=SEED)
+
+
+@pytest.mark.slow
+def test_real_backtest_is_deterministic_across_two_runs():
+    # CRITICAL BUG FOUND IN REVIEW, FIXED HERE: an earlier version of
+    # this test called m.run() (the actual backtest) ONCE, then called
+    # record() TWICE against that same static, already-produced output.
+    # The resulting timestamps were ~10ms apart — nowhere near enough
+    # time to run a real H4 backtest over 2019-2025 for 3 instruments —
+    # which proved both calls were just re-hashing identical files that
+    # already existed. Identical hashes from that setup are a tautology,
+    # not evidence of determinism. This is the EXACT failure class the
+    # earlier "lucky" dirty-tree runs represented: a check that cannot
+    # fail proves nothing.
+    #
+    # Fixed: the full pipeline (m.run() for all 3 symbols, regenerating
+    # trades_*.csv from scratch) now runs TWICE, independently, each
+    # followed by its own record() call. A wall-clock gate below asserts
+    # the two runs took a realistic amount of time apart, so this test
+    # cannot silently regress back into the tautological version.
+
+    t0 = time.monotonic()
     try:
-        r1 = record(strategy="trend_pullback", symbols=successful_symbols,
-                    config_snapshot=config_snapshot, data_paths=data_paths,
-                    output_paths=output_paths, seed=SEED)
-        r2 = record(strategy="trend_pullback", symbols=successful_symbols,
-                    config_snapshot=config_snapshot, data_paths=data_paths,
-                    output_paths=output_paths, seed=SEED)
+        r1 = _run_full_pipeline_and_log()
+        t1 = time.monotonic()
+        r2 = _run_full_pipeline_and_log()
+        t2 = time.monotonic()
     except DirtyGitStateError as e:
         pytest.skip(f"Working tree not clean, cannot run ledger-based "
                     f"determinism check: {e}")
         return
+
+    run1_duration = t1 - t0
+    run2_duration = t2 - t1
+
+    # Anti-regression gate: each full pipeline pass must take at least
+    # 1 second. A tautological "log the same output twice" bug would
+    # show ~0.00Xs here instead. (Real runs in this environment take
+    # several seconds; 1s is a conservative floor, not a tight bound.)
+    assert run1_duration > 1.0, (
+        f"Run 1 completed in {run1_duration:.4f}s -- too fast to be a real "
+        f"3-instrument H4 backtest. This test may have regressed into "
+        f"logging pre-existing output instead of actually re-running it."
+    )
+    assert run2_duration > 1.0, (
+        f"Run 2 completed in {run2_duration:.4f}s -- same concern as above."
+    )
 
     assert r1["run_id"] != r2["run_id"], "sanity check: the two records must be distinct runs"
     assert r1["seed"] == r2["seed"] == SEED
     assert r1["config_hash"] == r2["config_hash"]
     assert r1["data_hashes"] == r2["data_hashes"]
     assert r1["output_hashes"] == r2["output_hashes"], (
-        "Two runs against identical code+data produced different output "
-        "hashes -- this means something in the pipeline is non-deterministic "
-        "(uncontrolled randomness, wall-clock dependence, unstable sort "
-        "order, etc.) and every downstream research result is suspect "
-        "until this is root-caused."
+        "Two INDEPENDENT full pipeline runs against identical code+data "
+        "produced different output hashes -- this means something in the "
+        "pipeline is non-deterministic (uncontrolled randomness, wall-clock "
+        "dependence, unstable sort order, embedded generation timestamps, "
+        "etc.) and every downstream research result is suspect until this "
+        "is root-caused."
     )
