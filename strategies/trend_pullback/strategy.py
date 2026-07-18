@@ -30,6 +30,16 @@ def prepare(df: pd.DataFrame, symbol: str = "USDJPY") -> pd.DataFrame:
     df["stop_loss"]   = df["close"] - (STOP_ATR_MULT * df["atr"])
     df["take_profit"] = df["close"] + (RISK_REWARD * STOP_ATR_MULT * df["atr"])
 
+    # ── Execution-contract columns (strategy-agnostic simulator interface) ──
+    # The simulator re-anchors these DISTANCES onto the actual entry price
+    # (see execution/simulator.py _open()). Emitting distances rather than
+    # absolute stop_loss/take_profit levels means the simulator never needs
+    # to import strategy-specific constants (STOP_ATR_MULT, RISK_REWARD) —
+    # any future strategy just needs to emit these two columns, which is
+    # the contract the M2 Strategy protocol will formalize.
+    df["stop_distance"]   = STOP_ATR_MULT * df["atr"]
+    df["target_distance"] = RISK_REWARD * STOP_ATR_MULT * df["atr"]
+
     df = df.iloc[WARMUP_BARS:].copy()
     print(f"[Strategy] Warmup stripped: {WARMUP_BARS} bars | "
           f"Remaining: {len(df)} | Signals: {df['signal'].sum()}")
