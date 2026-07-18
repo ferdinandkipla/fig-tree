@@ -32,7 +32,6 @@ from risk.drawdown import max_drawdown
 from execution.costs import total_cost
 from core.instruments import get_meta, SESSION_HOURS
 from core.config import RISK, BACKTEST, ENTRY_FEATURES
-from strategies.trend_pullback.params import STOP_ATR_MULT, RISK_REWARD
 
 MAX_BARS_IN_TRADE = 10  # H4 x 10 = ~40 hours
 
@@ -112,14 +111,22 @@ class Simulator:
     def _open(self, row, prev_row, dt, bar_idx: int):
         entry = row["open"]                # FIX 1: next bar open
 
-        # M0 FIX 9: stop/target derived from the ACTUAL entry price,
-        # not prev_row's close-based stop_loss/take_profit. Uses prev
-        # bar's ATR (last known volatility at signal time — still no
-        # lookahead) but anchors the R:R geometry to where we actually
-        # filled.
-        atr    = prev_row["atr"]
-        stop   = entry - STOP_ATR_MULT * atr
-        target = entry + STOP_ATR_MULT * atr * RISK_REWARD
+        # M0 FIX 9 (revised): stop/target derived from the ACTUAL entry
+        # price, not prev_row's close-based stop_loss/take_profit.
+        #
+        # CODE AUDIT FIX: originally this imported STOP_ATR_MULT/RISK_REWARD
+        # directly from strategies.trend_pullback.params — a coupling
+        # violation that made the simulator depend on one specific
+        # strategy, pre-empting the M2 Strategy protocol. Fixed: the
+        # strategy now emits stop_distance/target_distance columns (price
+        # units, computed from its own params in prepare()), and the
+        # simulator only re-anchors those distances onto the real entry
+        # price. The simulator no longer knows or cares which strategy
+        # produced them.
+        stop_dist   = prev_row["stop_distance"]
+        target_dist = prev_row["target_distance"]
+        stop        = entry - stop_dist
+        target      = entry + target_dist
 
         size   = position_size(          # FIX 3: pip-aware
             self.capital, RISK["risk_per_trade"],
