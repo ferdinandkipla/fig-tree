@@ -8,12 +8,21 @@ from data.mt5_connector import get_symbol
 CACHE_DIR = Path("data/storage")
 
 
+def cache_path(symbol: str, timeframe) -> Path:
+    """
+    Single source of truth for the cache filename pattern. Used by both
+    fetch() below and research/experiment.py's ledger (via main.py) so
+    the two can never silently diverge — a path built in two places
+    was exactly the kind of duplication the ledger exists to prevent.
+    """
+    return CACHE_DIR / f"{symbol}_{timeframe}.csv"
+
+
 def fetch(symbol: str, timeframe, start: datetime = None, end: datetime = None,
           use_cache: bool = True) -> pd.DataFrame:
 
     # Cache key = symbol + timeframe only (full history always cached)
-    label      = f"{symbol}_{timeframe}"
-    cache_file = CACHE_DIR / f"{label}.csv"
+    cache_file = cache_path(symbol, timeframe)
 
     if use_cache and cache_file.exists():
         print(f"[Loader] Cache hit: {cache_file.name}")

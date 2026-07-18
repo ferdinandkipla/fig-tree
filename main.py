@@ -1,13 +1,13 @@
 # main.py
 import os
 from data.mt5_connector import connect, disconnect
-from data.loader import fetch
+from data.loader import fetch, cache_path
 from strategies.trend_pullback.strategy import prepare
 from execution.simulator import Simulator
 from analytics.reporting import print_report, print_portfolio_report
 from analytics.charts import export_trade_charts
 from analytics.equity import plot_equity
-from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES
+from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES, SEED
 from research.experiment import record, DirtyGitStateError
 
 
@@ -68,7 +68,7 @@ def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback")
         "ENTRY_FEATURES":  ENTRY_FEATURES,
     }
     data_paths = {
-        sym: f"data/storage/{sym}_{BACKTEST['timeframe']}.csv"
+        sym: str(cache_path(sym, BACKTEST["timeframe"]))
         for sym in successful_symbols
     }
     output_paths = {
@@ -83,12 +83,21 @@ def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback")
             config_snapshot=config_snapshot,
             data_paths=data_paths,
             output_paths=output_paths,
+            seed=SEED,
         )
         print(f"[Ledger] Run logged: {entry['run_id']}  "
               f"(commit {entry['git_commit'][:8]}, "
               f"config_hash {entry['config_hash'][:8]})")
     except DirtyGitStateError as e:
         print(f"[Ledger] WARNING — run NOT logged: {e}")
+    except FileNotFoundError as e:
+        # M1 fix (code-audit finding): this used to be uncaught -- a
+        # mismatch between the constructed data/output path and what
+        # actually existed on disk would crash the whole run AFTER the
+        # backtest completed. Now caught explicitly and reported, same
+        # as the dirty-tree case, rather than raising past a completed
+        # portfolio report.
+        print(f"[Ledger] WARNING — run NOT logged, file missing: {e}")
 
 
 if __name__ == "__main__":

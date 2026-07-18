@@ -20,6 +20,7 @@
 import subprocess
 import hashlib
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,7 +28,21 @@ REPO_ROOT   = Path(__file__).resolve().parent.parent
 LEDGER_PATH = REPO_ROOT / "research" / "ledger.jsonl"
 RUNS_DIR    = REPO_ROOT / "research" / "runs"
 
-_DIRTY_CHECK_EXCLUDES = ("research/ledger.jsonl", "research/runs/")
+_DIRTY_CHECK_EXCLUDES = (
+    "research/ledger.jsonl",
+    "research/runs/",
+    # M1 fix (code-audit finding): trades_*.csv / yearly_*.csv /
+    # regime_by_*.csv are "latest" convenience outputs that every
+    # backtest run legitimately overwrites — same category as
+    # ledger.jsonl and runs/. Excluding them from the dirty check
+    # (rather than requiring them committed before every run) matches
+    # how the ledger actually guarantees reproducibility: via the
+    # immutable per-run copies written to research/runs/<run_id>/ by
+    # record() below, not via these live/mutable files staying clean.
+    "research/trades_",
+    "research/yearly_",
+    "research/regime_by_",
+)
 
 
 class DirtyGitStateError(RuntimeError):
@@ -120,8 +135,23 @@ def record(
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
 
-    data_hashes   = {sym: _sha256_file(Path(p)) for sym, p in data_paths.items()}
-    output_hashes = {sym: _sha256_file(Path(p)) for sym, p in output_paths.items()}
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    run_dir = RUNS_DIR / run_id
+    run_dir.mkdir(exist_ok=True)
+
+    data_hashes = {sym: _sha256_file(Path(p)) for sym, p in data_paths.items()}
+
+    # M1 fix (code-audit finding): copy each output file into this run's
+    # own directory BEFORE hashing, so output_hashes reference an
+    # artifact that survives the next run overwriting the live path
+    # (e.g. research/trades_USDJPY.csv gets clobbered by run #2 --
+    # research/runs/<run_id>/trades_USDJPY.csv does not).
+    output_hashes = {}
+    for sym, p in output_paths.items():
+        src = Path(p)
+        dst = run_dir / src.name
+        shutil.copy2(src, dst)
+        output_hashes[sym] = _sha256_file(dst)
 
     entry = {
         "run_id":          run_id,
@@ -138,9 +168,6 @@ def record(
         "extra":           extra or {},
     }
 
-    RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    run_dir = RUNS_DIR / run_id
-    run_dir.mkdir(exist_ok=True)
     with open(run_dir / "run.json", "w") as f:
         json.dump(entry, f, indent=2, default=str)
 

@@ -46,3 +46,10 @@ TREND_PULLBACK = {
 # and the simulator will capture it automatically — no simulator edits
 # needed to test a new entry-context hypothesis.
 ENTRY_FEATURES = ["adx", "atr", "ema_distance", "trend_gap"]
+
+# ── M1: reserved for M2's null_random.py ────────────────────────────────
+# trend_pullback is fully deterministic and doesn't consume this. Defined
+# now (rather than added ad hoc in M2) so the ledger has been logging a
+# real seed value from the start, instead of every M1-era entry showing
+# seed: None and M2 needing a ledger schema change to add it.
+SEED = 42

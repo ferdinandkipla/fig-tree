@@ -23,7 +23,8 @@ if "MetaTrader5" not in sys.modules:
 
 import pytest
 import main as m
-from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES
+from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES, SEED
+from data.loader import cache_path
 from research.experiment import record, DirtyGitStateError
 
 
@@ -31,12 +32,13 @@ from research.experiment import record, DirtyGitStateError
 def test_real_backtest_is_deterministic_across_two_runs():
     # NOTE: deliberately calling research.experiment.record() directly
     # here, NOT main._log_run_to_ledger(). The latter is a CLI-friendly
-    # wrapper that CATCHES DirtyGitStateError and only prints a warning
-    # (so a dirty tree doesn't crash a live trading/research session).
-    # That means a try/except around _log_run_to_ledger() never fires,
-    # and this test would silently pass by comparing STALE entries from
-    # some earlier run instead of the two runs performed right here.
-    # (Caught this exact false-positive while writing this test.)
+    # wrapper that CATCHES DirtyGitStateError (and FileNotFoundError)
+    # and only prints a warning (so a dirty tree doesn't crash a live
+    # trading/research session). That means a try/except around
+    # _log_run_to_ledger() never fires, and this test would silently
+    # pass by comparing STALE entries from some earlier run instead of
+    # the two runs performed right here. (Caught this exact false-
+    # positive while writing an earlier draft of this test.)
 
     all_results = {}
     for symbol in ("USDJPY", "XAUUSD", "GBPJPY"):
@@ -52,22 +54,26 @@ def test_real_backtest_is_deterministic_across_two_runs():
         "BACKTEST": BACKTEST, "RISK": RISK,
         "TREND_PULLBACK": TREND_PULLBACK, "ENTRY_FEATURES": ENTRY_FEATURES,
     }
-    data_paths   = {s: f"data/storage/{s}_{BACKTEST['timeframe']}.csv" for s in successful_symbols}
+    # cache_path(), not a hand-built f-string -- must match main.py exactly
+    # (a second, independently-constructed path was a real bug found in
+    # code audit: FileNotFoundError if the two patterns ever diverged).
+    data_paths   = {s: str(cache_path(s, BACKTEST["timeframe"])) for s in successful_symbols}
     output_paths = {s: f"research/trades_{s}.csv" for s in successful_symbols}
 
     try:
         r1 = record(strategy="trend_pullback", symbols=successful_symbols,
                     config_snapshot=config_snapshot, data_paths=data_paths,
-                    output_paths=output_paths)
+                    output_paths=output_paths, seed=SEED)
         r2 = record(strategy="trend_pullback", symbols=successful_symbols,
                     config_snapshot=config_snapshot, data_paths=data_paths,
-                    output_paths=output_paths)
+                    output_paths=output_paths, seed=SEED)
     except DirtyGitStateError as e:
         pytest.skip(f"Working tree not clean, cannot run ledger-based "
                     f"determinism check: {e}")
         return
 
     assert r1["run_id"] != r2["run_id"], "sanity check: the two records must be distinct runs"
+    assert r1["seed"] == r2["seed"] == SEED
     assert r1["config_hash"] == r2["config_hash"]
     assert r1["data_hashes"] == r2["data_hashes"]
     assert r1["output_hashes"] == r2["output_hashes"], (
