@@ -11,6 +11,11 @@
 # ordering, or equity-curve timing will break this test loudly instead
 # of silently corrupting a research result months later.
 #
+# The simulator is strategy-agnostic: stop/target are re-anchored from
+# stop_distance/target_distance columns (price-unit distances) rather
+# than the simulator importing any strategy's specific constants. The
+# synthetic bars below emulate exactly what strategy.prepare() emits.
+#
 # NOTE ON A REAL PORTABILITY ISSUE FOUND WHILE WRITING THIS TEST:
 # core/config.py does `import MetaTrader5 as mt5` purely to reference
 # mt5.TIMEFRAME_H4 as a constant. MetaTrader5 is a Windows-only package
@@ -51,9 +56,15 @@ from execution.simulator import Simulator, MAX_BARS_IN_TRADE
 #  i=6  low=102.3 hits stop(102.5)             -> Trade B closes: stop_loss
 #  i=7  trailing bar, no trade                 -> final equity point only
 
-def _bar(o, h, l, c, atr, adx, ema_dist, trend_gap, signal):
+def _bar(o, h, l, c, atr, adx, ema_dist, trend_gap, signal, stop_atr_mult=1.5, rr=2.0):
+    # stop_distance/target_distance emulate what strategy.prepare() now
+    # emits (price-unit distances, strategy-agnostic contract) so the
+    # simulator's _open() can re-anchor them onto the real entry price
+    # without importing any strategy-specific constants.
     return dict(open=o, high=h, low=l, close=c, atr=atr, adx=adx,
-                ema_distance=ema_dist, trend_gap=trend_gap, signal=signal)
+                ema_distance=ema_dist, trend_gap=trend_gap, signal=signal,
+                stop_distance=stop_atr_mult * atr,
+                target_distance=rr * stop_atr_mult * atr)
 
 
 @pytest.fixture
