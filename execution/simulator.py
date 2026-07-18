@@ -1,5 +1,5 @@
 # execution/simulator.py
-# All 6 fixes applied:
+# All fixes applied:
 #   1. No lookahead bias    — signal bar[i], entry bar[i+1] open
 #   2. Pessimistic fill     — stop before target if both hit same bar
 #   3. Instrument-aware     — pip-correct costs and sizing
@@ -7,6 +7,20 @@
 #   5. Regime tagging       — ADX, ATR, session, year on every trade
 #   6. Time-based exit      — MAX_BARS_IN_TRADE = 10 (40hrs on H4)
 #   7. Warmup in strategy   — handled upstream in strategy.prepare()
+#
+# M0 fixes (research-integrity review):
+#   8. Generic ENTRY_FEATURES capture — regime dict no longer hardcodes
+#      which columns get recorded; any column added in strategy.prepare()
+#      and declared in core.config.ENTRY_FEATURES is captured automatically.
+#      Fixes the silent ema_distance/trend_gap NaN bug (schema promised
+#      columns the producer never populated).
+#   9. Stop/target recomputed from the ACTUAL entry price (row["open"]),
+#      not the previous bar's close-based stop_loss/take_profit. Previously
+#      a gap between prev_row's close and the next bar's open silently
+#      skewed realized R:R away from the configured ratio.
+#  10. Equity curve now appended AFTER trade management for the bar,
+#      so each equity point reflects capital net of any close on that
+#      bar rather than lagging it by one bar.
 
 import pandas as pd
 import numpy as np
@@ -17,9 +31,15 @@ from risk.exposure import ExposureGuard
 from risk.drawdown import max_drawdown
 from execution.costs import total_cost
 from core.instruments import get_meta, SESSION_HOURS
-from core.config import RISK, BACKTEST
+from core.config import RISK, BACKTEST, ENTRY_FEATURES
+from strategies.trend_pullback.params import STOP_ATR_MULT, RISK_REWARD
 
 MAX_BARS_IN_TRADE = 10  # H4 x 10 = ~40 hours
+
+# Feature names that keep their legacy "<name>_entry" column name in the
+# trade record, preserving backward compatibility with research/walkforward.py
+# which expects adx_entry / atr_entry specifically.
+_LEGACY_ENTRY_SUFFIX = ("adx", "atr")
 
 
 @dataclass
@@ -59,13 +79,10 @@ class Simulator:
             row      = df.iloc[i]
             prev_row = df.iloc[i - 1]
             dt       = df.index[i]
-            current_dd = self._current_dd()
 
-            self.guard.on_bar()   # ← ADD THIS LINE
+            self.guard.on_bar()
 
-            self.equity_curve.append({"datetime": dt, "equity": self.capital})
-            # ... rest unchanged
-            # ── Manage open trade ──────────────────────────────
+            # ── Manage open trade (may close this bar) ─────────────
             if self._trade is not None:
                 stop_hit   = row["low"]  <= self._trade.stop
                 target_hit = row["high"] >= self._trade.target
@@ -80,6 +97,10 @@ class Simulator:
                 elif bars_held >= MAX_BARS_IN_TRADE:  # FIX 6: time exit
                     self._close(dt, row["close"], "time_exit", bars_held)
 
+            # ── M0 FIX 10: mark equity AFTER any close this bar ─────
+            current_dd = self._current_dd()
+            self.equity_curve.append({"datetime": dt, "equity": self.capital})
+
             # ── New entry: signal from prev bar, enter at current open ──
             if self._trade is None and prev_row.get("signal", 0) == 1:
                 if self.guard.can_trade(current_dd):
@@ -89,19 +110,34 @@ class Simulator:
         return self._report()
 
     def _open(self, row, prev_row, dt, bar_idx: int):
-        entry  = row["open"]             # FIX 1: next bar open
-        stop   = prev_row["stop_loss"]
-        target = prev_row["take_profit"]
+        entry = row["open"]                # FIX 1: next bar open
+
+        # M0 FIX 9: stop/target derived from the ACTUAL entry price,
+        # not prev_row's close-based stop_loss/take_profit. Uses prev
+        # bar's ATR (last known volatility at signal time — still no
+        # lookahead) but anchors the R:R geometry to where we actually
+        # filled.
+        atr    = prev_row["atr"]
+        stop   = entry - STOP_ATR_MULT * atr
+        target = entry + STOP_ATR_MULT * atr * RISK_REWARD
+
         size   = position_size(          # FIX 3: pip-aware
             self.capital, RISK["risk_per_trade"],
             entry, stop, self.symbol
         )
-        regime = {                       # FIX 5: regime tag
-            "adx":     round(prev_row.get("adx", 0), 1),
-            "atr":     round(prev_row.get("atr", 0), 5),
+
+        # M0 FIX 8: generic entry-feature capture. Any column declared
+        # in core.config.ENTRY_FEATURES is pulled from the signal bar
+        # (prev_row) automatically — no simulator edit needed to add a
+        # new research feature.
+        regime = {
             "session": self._active_session(dt),
             "year":    pd.Timestamp(dt).year,
         }
+        for feat in ENTRY_FEATURES:
+            val = prev_row.get(feat)
+            regime[feat] = round(float(val), 5) if pd.notna(val) else None
+
         self._trade = Trade(             # FIX 4: Trade object
             symbol    = self.symbol,
             entry     = entry,
@@ -120,8 +156,6 @@ class Simulator:
 
         # ── CORRECT P&L ACCOUNTING ────────────────────────────────
         # Convert price delta → pips → dollars
-        # Old (buggy):  pnl = (exit - entry) * size
-        # New (correct): pnl = pips * pip_value * size
         price_delta = exit_price - t.entry                    # price units
         pnl_pips    = price_delta / meta["pip_size"]          # → pips
         pnl_gross   = pnl_pips * meta["pip_value"] * t.size   # → dollars
@@ -130,27 +164,33 @@ class Simulator:
         pnl_net      = pnl_gross - total_cost(self.symbol)
         self.capital += pnl_net
 
-        self.trades.append({
+        trade_record = {
             "symbol":       t.symbol,
             "entry_dt":     t.entry_dt,
             "exit_dt":      dt,
             "entry":        round(t.entry, 5),
             "exit":         round(exit_price, 5),
-            "stop_loss":    round(t.stop, 5),       # ← ADD
-            "take_profit":  round(t.target, 5),     # ← ADD
+            "stop_loss":    round(t.stop, 5),
+            "take_profit":  round(t.target, 5),
             "size":         round(t.size, 4),
             "pnl_pips":     round(pnl_pips, 1),
             "pnl_gross":    round(pnl_gross, 2),
             "pnl":          round(pnl_net, 2),
             "bars_held":    bars_held,
             "exit_reason":  reason,
-            "adx_entry":    t.regime.get("adx"),
-            "atr_entry":    t.regime.get("atr"),
-            "session":      t.regime.get("session"),
-            "year":         t.regime.get("year"),
-            "ema_distance": t.regime.get("ema_distance"),
-            "trend_gap":    t.regime.get("trend_gap"),
-        })
+        }
+
+        # M0 FIX 8 (cont.): generic capture, with legacy column-name
+        # preservation for adx/atr so research/walkforward.py (which
+        # expects adx_entry / atr_entry) keeps working unchanged.
+        for feat in ENTRY_FEATURES:
+            key = f"{feat}_entry" if feat in _LEGACY_ENTRY_SUFFIX else feat
+            trade_record[key] = t.regime.get(feat)
+
+        trade_record["session"] = t.regime.get("session")
+        trade_record["year"]    = t.regime.get("year")
+
+        self.trades.append(trade_record)
 
         self.guard.on_win() if pnl_net > 0 else self.guard.on_loss()
         self._trade = None
@@ -197,7 +237,7 @@ class Simulator:
                                      / BACKTEST["initial_capital"] * 100, 2),
             "max_drawdown_%":  max_drawdown(self.equity_curve),
             "sharpe_ratio":    round(sharpe, 2),
-            "sharpe_note":     "trade-based approx — fix in Phase 2",
+            "sharpe_note":     "trade-based approx — fix in Phase 2 M1",
             "avg_win":         round(wins["pnl"].mean(), 2)   if len(wins)   > 0 else 0,
             "avg_loss":        round(losses["pnl"].mean(), 2) if len(losses) > 0 else 0,
             "avg_bars_held":   round(df_t["bars_held"].mean(), 1),
