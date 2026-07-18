@@ -1,4 +1,5 @@
 # main.py
+import os
 from data.mt5_connector import connect, disconnect
 from data.loader import fetch
 from strategies.trend_pullback.strategy import prepare
@@ -6,7 +7,8 @@ from execution.simulator import Simulator
 from analytics.reporting import print_report, print_portfolio_report
 from analytics.charts import export_trade_charts
 from analytics.equity import plot_equity
-from core.config import BACKTEST
+from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES
+from research.experiment import record, DirtyGitStateError
 
 
 def run(symbol: str, export_charts: bool = False) -> dict:
@@ -37,6 +39,58 @@ def run(symbol: str, export_charts: bool = False) -> dict:
 
     return results
 
+
+def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback"):
+    """
+    M1: log this run to the experiment ledger. Opt-out via
+    ZENITHFLOW_SKIP_LEDGER=1, not opt-in — every run is logged by
+    default so the ledger can't silently develop gaps.
+
+    Refuses (loudly, not silently) if the git tree is dirty outside
+    research/ledger.jsonl and research/runs/ — see research/experiment.py.
+    """
+    if os.environ.get("ZENITHFLOW_SKIP_LEDGER"):
+        print("[Ledger] Skipped (ZENITHFLOW_SKIP_LEDGER set).")
+        return
+
+    successful_symbols = [
+        sym for sym, res in all_results.items()
+        if res and "trades" in res and res["trades"] is not None and len(res["trades"]) > 0
+    ]
+    if not successful_symbols:
+        print("[Ledger] No successful runs to log.")
+        return
+
+    config_snapshot = {
+        "BACKTEST":        BACKTEST,
+        "RISK":            RISK,
+        "TREND_PULLBACK":  TREND_PULLBACK,
+        "ENTRY_FEATURES":  ENTRY_FEATURES,
+    }
+    data_paths = {
+        sym: f"data/storage/{sym}_{BACKTEST['timeframe']}.csv"
+        for sym in successful_symbols
+    }
+    output_paths = {
+        sym: f"research/trades_{sym}.csv"
+        for sym in successful_symbols
+    }
+
+    try:
+        entry = record(
+            strategy=strategy_name,
+            symbols=successful_symbols,
+            config_snapshot=config_snapshot,
+            data_paths=data_paths,
+            output_paths=output_paths,
+        )
+        print(f"[Ledger] Run logged: {entry['run_id']}  "
+              f"(commit {entry['git_commit'][:8]}, "
+              f"config_hash {entry['config_hash'][:8]})")
+    except DirtyGitStateError as e:
+        print(f"[Ledger] WARNING — run NOT logged: {e}")
+
+
 if __name__ == "__main__":
     if not connect():
         exit(1)
@@ -46,5 +100,6 @@ if __name__ == "__main__":
         all_results["XAUUSD"] = run("XAUUSD", export_charts=True)
         all_results["GBPJPY"] = run("GBPJPY", export_charts=True)
         print_portfolio_report(all_results)
+        _log_run_to_ledger(all_results)
     finally:
         disconnect()
