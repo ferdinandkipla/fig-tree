@@ -1,0 +1,35 @@
+{
+  "run_id": "20260719T205237343547Z",
+  "timestamp_utc": "2026-07-19T20:52:37.344802+00:00",
+  "git_commit": "7b87319244d61fdedc55878b27a48b2ef1ffe868",
+  "git_dirty": false,
+  "strategy": "trend_pullback",
+  "symbols": [
+    "USDJPY"
+  ],
+  "seed": null,
+  "config_hash": "418569a8dd24490a3f4ec1a7fbc2ff949903afadb5fae9b51f8a1e914a0ab6c3",
+  "config_snapshot": {
+    "strategy": "trend_pullback",
+    "ema_fast": 50,
+    "ema_slow": 200,
+    "adx_period": 14,
+    "adx_threshold": 20,
+    "atr_period": 14,
+    "stop_atr_multiplier": 1.5,
+    "risk_reward": 2.0,
+    "pullback_tolerance": 0.5,
+    "max_bars_in_trade": 10,
+    "arm": "A"
+  },
+  "data_hashes": {
+    "USDJPY": "ed4fef84ab1182eef3df7603162e16c426cd58830c7e735f93e1d749bb28542b"
+  },
+  "output_hashes": {
+    "USDJPY": "64a15b516edff2f4ffb02d5c12bdcd6d86ab289daa0263b6086eea53a8827394"
+  },
+  "extra": {
+    "purpose": "H-003_real_strategy_arm",
+    "arm": "A"
+  }
+}

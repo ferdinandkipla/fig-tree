@@ -1,0 +1,35 @@
+{
+  "run_id": "20260719T205259071108Z",
+  "timestamp_utc": "2026-07-19T20:52:59.072080+00:00",
+  "git_commit": "7b87319244d61fdedc55878b27a48b2ef1ffe868",
+  "git_dirty": false,
+  "strategy": "trend_pullback",
+  "symbols": [
+    "XAUUSD"
+  ],
+  "seed": null,
+  "config_hash": "08f6b7b372320a1248cfcbf93f23fb5135caa0f12bdf00d7cf336a30636bd096",
+  "config_snapshot": {
+    "strategy": "trend_pullback",
+    "ema_fast": 50,
+    "ema_slow": 200,
+    "adx_period": 14,
+    "adx_threshold": 20,
+    "atr_period": 14,
+    "stop_atr_multiplier": 1.5,
+    "risk_reward": 2.0,
+    "pullback_tolerance": 0.5,
+    "max_bars_in_trade": 500,
+    "arm": "B"
+  },
+  "data_hashes": {
+    "XAUUSD": "278f11e0c45cc993eb4729f0517e311ce5dd71def001b6e6718f667271998441"
+  },
+  "output_hashes": {
+    "XAUUSD": "c2f169b1db236a9c0cdba439cbe48b4a7045710922a5cda03864d9bfe7a1dc40"
+  },
+  "extra": {
+    "purpose": "H-003_real_strategy_arm",
+    "arm": "B"
+  }
+}
