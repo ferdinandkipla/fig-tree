@@ -2,17 +2,20 @@
 import os
 from data.mt5_connector import connect, disconnect
 from data.loader import fetch, cache_path
-from strategies.trend_pullback.strategy import prepare
+from strategies.trend_pullback.strategy import TrendPullbackStrategy
 from execution.simulator import Simulator
 from analytics.reporting import print_report, print_portfolio_report
 from analytics.charts import export_trade_charts
 from analytics.equity import plot_equity
-from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES, SEED
+from core.config import BACKTEST, RISK, SEED
 from research.experiment import record, DirtyGitStateError
 
 
-def run(symbol: str, export_charts: bool = False) -> dict:
+def run(symbol: str, export_charts: bool = False, strategy=None) -> dict:
     print(f"\n[Main] Starting: {symbol}")
+
+    if strategy is None:
+        strategy = TrendPullbackStrategy()
 
     df = fetch(symbol, BACKTEST["timeframe"],
                BACKTEST["start"], BACKTEST["end"],
@@ -21,8 +24,8 @@ def run(symbol: str, export_charts: bool = False) -> dict:
         print(f"[Main] No data for {symbol}. Skipping.")
         return {}
 
-    df_prepared = prepare(df, symbol=symbol)   # ← pass symbol
-    sim         = Simulator(symbol)
+    df_prepared = strategy.prepare(df, symbol=symbol)
+    sim         = Simulator(symbol, entry_features=strategy.entry_features)
     results     = sim.run(df_prepared)
 
     if "error" in results:
@@ -40,7 +43,7 @@ def run(symbol: str, export_charts: bool = False) -> dict:
     return results
 
 
-def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback"):
+def _log_run_to_ledger(all_results: dict, strategy=None):
     """
     M1: log this run to the experiment ledger. Opt-out via
     ZENITHFLOW_SKIP_LEDGER=1, not opt-in — every run is logged by
@@ -53,6 +56,9 @@ def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback")
         print("[Ledger] Skipped (ZENITHFLOW_SKIP_LEDGER set).")
         return
 
+    if strategy is None:
+        strategy = TrendPullbackStrategy()
+
     successful_symbols = [
         sym for sym, res in all_results.items()
         if res and "trades" in res and res["trades"] is not None and len(res["trades"]) > 0
@@ -61,12 +67,10 @@ def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback")
         print("[Ledger] No successful runs to log.")
         return
 
-    config_snapshot = {
-        "BACKTEST":        BACKTEST,
-        "RISK":            RISK,
-        "TREND_PULLBACK":  TREND_PULLBACK,
-        "ENTRY_FEATURES":  ENTRY_FEATURES,
-    }
+    # M2: config_snapshot now comes from strategy.params (the Strategy
+    # protocol's own config-snapshot contract) instead of hand-assembled
+    # globals -- works unchanged for any future Strategy implementation.
+    config_snapshot = strategy.params
     data_paths = {
         sym: str(cache_path(sym, BACKTEST["timeframe"]))
         for sym in successful_symbols
@@ -78,7 +82,7 @@ def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback")
 
     try:
         entry = record(
-            strategy=strategy_name,
+            strategy=strategy.name,
             symbols=successful_symbols,
             config_snapshot=config_snapshot,
             data_paths=data_paths,
@@ -91,12 +95,6 @@ def _log_run_to_ledger(all_results: dict, strategy_name: str = "trend_pullback")
     except DirtyGitStateError as e:
         print(f"[Ledger] WARNING — run NOT logged: {e}")
     except FileNotFoundError as e:
-        # M1 fix (code-audit finding): this used to be uncaught -- a
-        # mismatch between the constructed data/output path and what
-        # actually existed on disk would crash the whole run AFTER the
-        # backtest completed. Now caught explicitly and reported, same
-        # as the dirty-tree case, rather than raising past a completed
-        # portfolio report.
         print(f"[Ledger] WARNING — run NOT logged, file missing: {e}")
 
 
@@ -104,11 +102,12 @@ if __name__ == "__main__":
     if not connect():
         exit(1)
     try:
+        strategy = TrendPullbackStrategy()
         all_results = {}
-        all_results["USDJPY"] = run("USDJPY", export_charts=True)
-        all_results["XAUUSD"] = run("XAUUSD", export_charts=True)
-        all_results["GBPJPY"] = run("GBPJPY", export_charts=True)
+        all_results["USDJPY"] = run("USDJPY", export_charts=True, strategy=strategy)
+        all_results["XAUUSD"] = run("XAUUSD", export_charts=True, strategy=strategy)
+        all_results["GBPJPY"] = run("GBPJPY", export_charts=True, strategy=strategy)
         print_portfolio_report(all_results)
-        _log_run_to_ledger(all_results)
+        _log_run_to_ledger(all_results, strategy=strategy)
     finally:
         disconnect()

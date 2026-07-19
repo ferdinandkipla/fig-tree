@@ -24,7 +24,8 @@ if "MetaTrader5" not in sys.modules:
 import time
 import pytest
 import main as m
-from core.config import BACKTEST, RISK, TREND_PULLBACK, ENTRY_FEATURES, SEED
+from strategies.trend_pullback.strategy import TrendPullbackStrategy
+from core.config import BACKTEST, SEED
 from data.loader import cache_path
 from research.experiment import record, DirtyGitStateError
 
@@ -32,9 +33,10 @@ from research.experiment import record, DirtyGitStateError
 def _run_full_pipeline_and_log():
     """Runs the REAL backtest for all 3 symbols (regenerating trades_*.csv
     from scratch) and logs one ledger entry. Returns the ledger entry."""
+    strategy = TrendPullbackStrategy()
     all_results = {}
     for symbol in ("USDJPY", "XAUUSD", "GBPJPY"):
-        all_results[symbol] = m.run(symbol, export_charts=False)
+        all_results[symbol] = m.run(symbol, export_charts=False, strategy=strategy)
 
     successful_symbols = [
         sym for sym, res in all_results.items()
@@ -42,15 +44,11 @@ def _run_full_pipeline_and_log():
     ]
     assert successful_symbols, "backtest produced no trades for any symbol"
 
-    config_snapshot = {
-        "BACKTEST": BACKTEST, "RISK": RISK,
-        "TREND_PULLBACK": TREND_PULLBACK, "ENTRY_FEATURES": ENTRY_FEATURES,
-    }
     data_paths   = {s: str(cache_path(s, BACKTEST["timeframe"])) for s in successful_symbols}
     output_paths = {s: f"research/trades_{s}.csv" for s in successful_symbols}
 
-    return record(strategy="trend_pullback", symbols=successful_symbols,
-                  config_snapshot=config_snapshot, data_paths=data_paths,
+    return record(strategy=strategy.name, symbols=successful_symbols,
+                  config_snapshot=strategy.params, data_paths=data_paths,
                   output_paths=output_paths, seed=SEED)
 
 

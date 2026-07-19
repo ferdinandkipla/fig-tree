@@ -60,7 +60,7 @@ class Trade:
 
 class Simulator:
 
-    def __init__(self, symbol: str):
+    def __init__(self, symbol: str, entry_features: list = None):
         self.symbol       = symbol
         self.meta         = get_meta(symbol)
         self.capital      = BACKTEST["initial_capital"]
@@ -72,6 +72,12 @@ class Simulator:
             max_dd_halt          = -RISK["max_drawdown_halt"] * 100,
         )
         self._trade: Optional[Trade] = None
+        # M2: entry_features now comes from the Strategy instance
+        # (strategy.entry_features) via the caller, not a hardcoded
+        # import -- the simulator has zero strategy-name knowledge.
+        # Defaults to the core.config global for backward compatibility
+        # with any caller that hasn't been updated to pass it explicitly.
+        self.entry_features = entry_features if entry_features is not None else ENTRY_FEATURES
 
     def run(self, df: pd.DataFrame) -> dict:
         for i in range(1, len(df)):
@@ -141,7 +147,7 @@ class Simulator:
             "session": self._active_session(dt),
             "year":    pd.Timestamp(dt).year,
         }
-        for feat in ENTRY_FEATURES:
+        for feat in self.entry_features:
             val = prev_row.get(feat)
             regime[feat] = round(float(val), 5) if pd.notna(val) else None
 
@@ -190,7 +196,7 @@ class Simulator:
         # M0 FIX 8 (cont.): generic capture, with legacy column-name
         # preservation for adx/atr so research/walkforward.py (which
         # expects adx_entry / atr_entry) keeps working unchanged.
-        for feat in ENTRY_FEATURES:
+        for feat in self.entry_features:
             key = f"{feat}_entry" if feat in _LEGACY_ENTRY_SUFFIX else feat
             trade_record[key] = t.regime.get(feat)
 

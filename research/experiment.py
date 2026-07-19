@@ -42,6 +42,10 @@ _DIRTY_CHECK_EXCLUDES = (
     "research/trades_",
     "research/yearly_",
     "research/regime_by_",
+    # M2: null-model per-seed trade CSVs and summary -- same category,
+    # every seeded run legitimately writes a new file here.
+    "research/null_runs/",
+    "research/null_distribution_summary.csv",
 )
 
 
