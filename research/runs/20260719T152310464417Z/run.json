@@ -1,0 +1,27 @@
+{
+  "run_id": "20260719T152310464417Z",
+  "timestamp_utc": "2026-07-19T15:23:10.465982+00:00",
+  "git_commit": "cc4046848f2b624754b95acbcd88e3c789a2f74b",
+  "git_dirty": false,
+  "strategy": "null_random",
+  "symbols": [
+    "XAUUSD"
+  ],
+  "seed": 13,
+  "config_hash": "770f5211f3b5d6a37a9fa731cd2cad2ba84c738aec76a2e948438f56a77e396e",
+  "config_snapshot": {
+    "strategy": "null_random",
+    "seed": 13,
+    "n_signals": 666
+  },
+  "data_hashes": {
+    "XAUUSD": "278f11e0c45cc993eb4729f0517e311ce5dd71def001b6e6718f667271998441"
+  },
+  "output_hashes": {
+    "XAUUSD": "56be78629294dcdfc7e46aa00bc4292b88428b1c912a2e5002673f201febe98a"
+  },
+  "extra": {
+    "purpose": "M2_null_distribution",
+    "n_signals": 666
+  }
+}
