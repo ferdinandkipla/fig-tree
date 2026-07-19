@@ -46,6 +46,7 @@ _DIRTY_CHECK_EXCLUDES = (
     # every seeded run legitimately writes a new file here.
     "research/null_runs/",
     "research/null_distribution_summary.csv",
+    "research/null_seed_results.csv",
 )
 
 
