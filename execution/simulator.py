@@ -60,7 +60,7 @@ class Trade:
 
 class Simulator:
 
-    def __init__(self, symbol: str, entry_features: list = None):
+    def __init__(self, symbol: str, entry_features: list = None, max_bars_in_trade: int = None):
         self.symbol       = symbol
         self.meta         = get_meta(symbol)
         self.capital      = BACKTEST["initial_capital"]
@@ -78,6 +78,10 @@ class Simulator:
         # Defaults to the core.config global for backward compatibility
         # with any caller that hasn't been updated to pass it explicitly.
         self.entry_features = entry_features if entry_features is not None else ENTRY_FEATURES
+        # H-003: configurable per-instance so Arm A (default 10) vs Arm B
+        # (500, functionally "no time exit") can run side-by-side without
+        # a global mutation racing between them.
+        self.max_bars_in_trade = max_bars_in_trade if max_bars_in_trade is not None else MAX_BARS_IN_TRADE
 
     def run(self, df: pd.DataFrame) -> dict:
         for i in range(1, len(df)):
@@ -99,7 +103,7 @@ class Simulator:
                     self._close(dt, self._trade.stop, "stop_loss", bars_held)
                 elif target_hit:
                     self._close(dt, self._trade.target, "take_profit", bars_held)
-                elif bars_held >= MAX_BARS_IN_TRADE:  # FIX 6: time exit
+                elif bars_held >= self.max_bars_in_trade:  # FIX 6: time exit
                     self._close(dt, row["close"], "time_exit", bars_held)
 
             # ── M0 FIX 10: mark equity AFTER any close this bar ─────
