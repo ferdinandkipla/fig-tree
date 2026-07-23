@@ -23,6 +23,10 @@ class TrendPullbackStrategy:
         df = compute_common_features(df)
 
         df["signal"]      = entry_signal(df, symbol=symbol)
+        df["direction"]   = 1   # S1 redesign: long-only by explicit
+                                # declaration, not the simulator default.
+                                # Direction is a research claim owned by
+                                # the strategy (core/strategy.py).
         df["stop_loss"]   = df["close"] - (STOP_ATR_MULT * df["atr"])
         df["take_profit"] = df["close"] + (RISK_REWARD * STOP_ATR_MULT * df["atr"])
 

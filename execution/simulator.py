@@ -50,6 +50,7 @@ class Trade:
     size:       float
     entry_dt:   object
     entry_bar:  int
+    direction:  int = 1   # +1 = long, -1 = short. Default preserves old long-only behavior.
     regime:     dict = field(default_factory=dict)
     exit:        Optional[float]  = None
     exit_dt:     Optional[object] = None
@@ -94,8 +95,16 @@ class Simulator:
 
             # ── Manage open trade (may close this bar) ─────────────
             if self._trade is not None:
-                stop_hit   = row["low"]  <= self._trade.stop
-                target_hit = row["high"] >= self._trade.target
+                # Direction-aware hit detection (S1 long/short redesign).
+                # Long: stop below entry, target above -- price falling
+                # hits stop, rising hits target (unchanged from before).
+                # Short: stop above entry, target below -- mirrored.
+                if self._trade.direction == 1:
+                    stop_hit   = row["low"]  <= self._trade.stop
+                    target_hit = row["high"] >= self._trade.target
+                else:
+                    stop_hit   = row["high"] >= self._trade.stop
+                    target_hit = row["low"]  <= self._trade.target
                 bars_held  = i - self._trade.entry_bar
 
                 if stop_hit and target_hit:          # FIX 2: pessimistic
@@ -132,6 +141,14 @@ class Simulator:
     def _open(self, row, prev_row, dt, bar_idx: int):
         entry = row["open"]                # FIX 1: next bar open
 
+        # S1 long/short redesign: direction comes from the strategy's
+        # "direction" column (+1 long, -1 short), defaulting to +1 (long)
+        # if the column is absent -- this is what keeps every existing
+        # long-only strategy (trend_pullback, null_random) byte-identical
+        # to their pre-redesign canonical hashes without any change to
+        # those strategy files.
+        direction = int(prev_row.get("direction", 1))
+
         # M0 FIX 9 (revised): stop/target derived from the ACTUAL entry
         # price, not prev_row's close-based stop_loss/take_profit.
         #
@@ -146,12 +163,16 @@ class Simulator:
         # produced them.
         stop_dist   = prev_row["stop_distance"]
         target_dist = prev_row["target_distance"]
-        stop        = entry - stop_dist
-        target      = entry + target_dist
+        if direction == 1:
+            stop   = entry - stop_dist
+            target = entry + target_dist
+        else:  # direction == -1: geometry mirrors around entry
+            stop   = entry + stop_dist
+            target = entry - target_dist
 
-        size   = position_size(          # FIX 3: pip-aware
-            self.capital, RISK["risk_per_trade"],
-            entry, stop, self.symbol
+        size   = position_size(          # FIX 3: pip-aware; abs(entry-stop)
+            self.capital, RISK["risk_per_trade"],   # already direction-agnostic,
+            entry, stop, self.symbol                # verified before this change
         )
 
         # M0 FIX 8: generic entry-feature capture. Any column declared
@@ -174,6 +195,7 @@ class Simulator:
             size      = size,
             entry_dt  = dt,
             entry_bar = bar_idx,
+            direction = direction,
             regime    = regime,
         )
         self.guard.on_open()
@@ -183,8 +205,12 @@ class Simulator:
         meta = self.meta
 
         # ── CORRECT P&L ACCOUNTING ────────────────────────────────
-        # Convert price delta → pips → dollars
-        price_delta = exit_price - t.entry                    # price units
+        # Convert price delta → pips → dollars. Direction-aware (S1
+        # redesign): for longs (direction=1), unchanged from before --
+        # profit when exit > entry. For shorts (direction=-1), profit
+        # when exit < entry, i.e. price_delta flips sign. Multiplying
+        # by t.direction handles both uniformly without an if/else here.
+        price_delta = (exit_price - t.entry) * t.direction    # price units
         pnl_pips    = price_delta / meta["pip_size"]          # → pips
         pnl_gross   = pnl_pips * meta["pip_value"] * t.size   # → dollars
 
@@ -194,6 +220,7 @@ class Simulator:
 
         trade_record = {
             "symbol":       t.symbol,
+            "direction":    t.direction,
             "entry_dt":     t.entry_dt,
             "exit_dt":      dt,
             "entry":        round(t.entry, 5),
