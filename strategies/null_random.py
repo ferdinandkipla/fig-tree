@@ -9,11 +9,20 @@
 # performance gap between this and the real strategy is attributable to
 # entry selection, not to some other silently-drifted difference.
 #
-# Direction: long-only by construction. The shared simulator only
-# implements long entries (execution/simulator.py _open(): stop = entry
-# - dist, target = entry + dist) -- every strategy using it inherits the
-# same directional bias automatically. There is no random-direction
-# option; per the M2 spec, that would answer a different question.
+# S1 UPDATE: direction can now also be randomized (signed=True), per
+# the long/short redesign. This is the "drift-neutral null" -- a
+# random-direction, random-timing null model converts the project's
+# recurring drift confound (M2's original long-only null showed
+# +$8-12/trade mean expectancy on TRAIN purely from being long during a
+# long-friendly 2019-2022 window) into a controlled, measurable
+# quantity instead of a caveat repeated in every writeup.
+#
+# Design choice: entry TIMING is drawn identically whether signed=False
+# or signed=True, for the same seed -- the direction coin-flip is drawn
+# from the SAME rng stream, AFTER entry selection, so turning on
+# direction randomization changes exactly one variable relative to the
+# existing (superseded-as-benchmark, still-historical) long-only null,
+# not two at once.
 
 import numpy as np
 import pandas as pd
@@ -24,7 +33,7 @@ from core.config import ENTRY_FEATURES, SEED
 class NullRandomStrategy:
     name = "null_random"
 
-    def __init__(self, n_signals: int, seed: int = None):
+    def __init__(self, n_signals: int, seed: int = None, signed: bool = False):
         """
         n_signals: the REAL strategy's signal count for this exact
             symbol/window. Must be computed by the caller as
@@ -35,9 +44,15 @@ class NullRandomStrategy:
         seed: defaults to core.config.SEED. Pass a different int per
             run to build a null distribution -- see
             research/run_null_model.py for the N-seed driver.
+        signed: if True, each sampled entry also gets a random direction
+            (+1 long / -1 short, coin flip, same rng stream as entry
+            selection). If False (default), every entry is long -- the
+            original M2 null, kept as the historical/superseded
+            long-only benchmark.
         """
         self.n_signals = n_signals
         self.seed      = seed if seed is not None else SEED
+        self.signed    = signed
 
     def prepare(self, df: pd.DataFrame, symbol: str = "USDJPY") -> pd.DataFrame:
         df = compute_common_features(df)
@@ -65,7 +80,20 @@ class NullRandomStrategy:
         df["signal"] = 0
         df.iloc[chosen, df.columns.get_loc("signal")] = 1
 
-        print(f"[NullRandom] ({symbol}, seed={self.seed}): "
+        # Direction: default long everywhere (only entry bars' direction
+        # is ever read by the simulator, via prev_row at signal time --
+        # non-entry bars' direction value is irrelevant but set for
+        # column completeness/clarity).
+        df["direction"] = 1
+        if self.signed:
+            # Drawn from the SAME rng stream, AFTER entry selection --
+            # entry timing is bar-for-bar identical to signed=False for
+            # the same seed; only direction is new.
+            directions = rng.choice([1, -1], size=n)
+            df.iloc[chosen, df.columns.get_loc("direction")] = directions
+
+        mode_label = "signed (random direction)" if self.signed else "long-only"
+        print(f"[NullRandom] ({symbol}, seed={self.seed}, {mode_label}): "
               f"{n} random signals sampled from {len(eligible_idx)} eligible bars")
 
         return df.dropna()
@@ -76,6 +104,7 @@ class NullRandomStrategy:
             "strategy":  self.name,
             "seed":      self.seed,
             "n_signals": self.n_signals,
+            "signed":    self.signed,
         }
 
     @property
