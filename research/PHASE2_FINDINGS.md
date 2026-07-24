@@ -6,6 +6,60 @@
 
 ---
 
+## AMENDMENT (2026-07-24) — M2's headline finding revised by the S1 signed null
+
+**This section does not replace the original report below — it corrects
+one specific claim in it, per this project's standing discipline of
+never silently rewriting a committed finding.** The original text is
+preserved unchanged after this section.
+
+**What changed:** the S1 long/short redesign built a drift-neutral
+("signed") null model — random direction (long or short) per entry,
+not just random timing — and ran it at full 100-seed scale
+(`research/null_seed_results_signed.csv`, `null_distribution_summary_signed.csv`,
+committed at `cef09ea`). Comparing it to the original long-only null
+(M2, `research/null_distribution_summary.csv`) isolates how much of the
+original null's mean expectancy was directional drift rather than
+randomness itself:
+
+| Symbol | Old (long-only) null mean | Signed null mean | Drift estimate | Real strategy | Inside signed band? |
+|---|---|---|---|---|---|
+| USDJPY | 10.17 | 1.64 | 8.53 | -4.38 | **True** |
+| XAUUSD | 12.50 | 2.27 | 10.23 | 4.25 | **True** |
+| GBPJPY | 8.58 | 3.38 | 5.21 | -5.29 | False (barely) |
+
+**Most of the original null's $8–12/trade mean was directional drift**,
+not an artifact of random entry timing itself — expected for FX/metals,
+which (unlike equities) have no structural long-side risk premium to
+harvest.
+
+**Revision to Section 3's M2 finding below:** the original claim "real
+entries land below the 5th percentile of null on all three instruments"
+is **no longer accurate for USDJPY and XAUUSD** under the drift-corrected
+benchmark — both now fall *inside* the signed null's band. The corrected
+reading: trend_pullback's entries are statistically indistinguishable
+from noise on USDJPY/XAUUSD (neither edge nor anti-edge), and GBPJPY
+retains weak, not-yet-conclusive underperformance (just below p05, a
+much smaller gap than the original comparison suggested).
+
+**What this does NOT change:** H-001, H-002, and H-003's verdicts stand
+unrevised — each killed a specific proposed mechanism (pullback depth,
+session structure, time-exit value-add) independent of the drift
+question, using TRAIN-only tests whose kill criteria don't reference
+the long-only null's absolute level. Section 4's overall verdict
+(`trend_pullback` retired, no component survived) also stands: a
+strategy whose entries are indistinguishable from noise, whose specific
+depth/session/exit mechanisms are all separately falsified, is still
+not a viable strategy — the correction narrows *why* the entries look
+the way they do, it doesn't rescue the strategy.
+
+**Provenance:** signed null committed `cef09ea` (100 seeds x 3
+instruments); simulator direction-capability committed `7a59ffe`;
+re-canonicalization committed `25db12b`. Cross-reference:
+`research/S1_DATA_SPLIT.md`, `strategies/null_random.py`.
+
+---
+
 ## 1. Ledger Audit
 
 **Total ledger entries: 338** (`research/ledger.jsonl`)
@@ -71,6 +125,11 @@ Four independent tests, four different methods, one consistent
 conclusion:
 
 ### M2 — Entries are worse than matched-frequency random
+
+**>>> See the AMENDMENT at the top of this document (2026-07-24): this
+finding was revised by the S1 signed null. USDJPY/XAUUSD no longer show
+below-p05 underperformance once directional drift is controlled for.
+GBPJPY's underperformance persists but is weaker than shown below. <<<**
 | Symbol | Real expectancy | Null mean | Null p05 | Result |
 |---|---|---|---|---|
 | USDJPY | -4.38 | 10.17 | 0.13 | below p05 |
