@@ -47,6 +47,10 @@ _DIRTY_CHECK_EXCLUDES = (
     "research/null_runs/",
     "research/null_distribution_summary.csv",
     "research/null_seed_results.csv",
+    # S1: signed null model outputs (separate from long-only, above)
+    "research/null_runs_signed/",
+    "research/null_distribution_summary_signed.csv",
+    "research/null_seed_results_signed.csv",
     # H-003: two-arm (A/B) time-exit test outputs.
     "research/h003_runs/",
     "research/h003_null_arm_results.csv",
