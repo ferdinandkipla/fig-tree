@@ -1,0 +1,29 @@
+{
+  "run_id": "20260724T195107068387Z",
+  "timestamp_utc": "2026-07-24T19:51:07.070061+00:00",
+  "git_commit": "96e9e2a64f020a903e846213df08e2c845c81459",
+  "git_dirty": false,
+  "strategy": "null_random",
+  "symbols": [
+    "GBPJPY"
+  ],
+  "seed": 96,
+  "config_hash": "d7163bc0db7e480dc09d419d319a22a29ed3ad24c924c947773ae6f2568d5cd5",
+  "config_snapshot": {
+    "strategy": "null_random",
+    "seed": 96,
+    "n_signals": 676,
+    "signed": true
+  },
+  "data_hashes": {
+    "GBPJPY": "d8094a98d59427eab7cb96173d7e93a09ca8b0acfe42386bc3ea68e2acb9756e"
+  },
+  "output_hashes": {
+    "GBPJPY": "5faef37887dc5d4f4de6ee9cb32b2da0790f393b93e8ac4e8e1965b944194e4e"
+  },
+  "extra": {
+    "purpose": "S1_signed_null_distribution",
+    "n_signals": 676,
+    "signed": true
+  }
+}

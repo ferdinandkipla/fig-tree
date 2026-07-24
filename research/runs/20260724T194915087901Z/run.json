@@ -1,0 +1,29 @@
+{
+  "run_id": "20260724T194915087901Z",
+  "timestamp_utc": "2026-07-24T19:49:15.089222+00:00",
+  "git_commit": "96e9e2a64f020a903e846213df08e2c845c81459",
+  "git_dirty": false,
+  "strategy": "null_random",
+  "symbols": [
+    "USDJPY"
+  ],
+  "seed": 66,
+  "config_hash": "34c08b929ce130df118da18430b4897b1fa38b4fe4bcb6d87cb1980c524a9f92",
+  "config_snapshot": {
+    "strategy": "null_random",
+    "seed": 66,
+    "n_signals": 611,
+    "signed": true
+  },
+  "data_hashes": {
+    "USDJPY": "ed4fef84ab1182eef3df7603162e16c426cd58830c7e735f93e1d749bb28542b"
+  },
+  "output_hashes": {
+    "USDJPY": "51622615b0887efe235e41088b327299987ea513c6e4402c203c9ebe991de2f8"
+  },
+  "extra": {
+    "purpose": "S1_signed_null_distribution",
+    "n_signals": 611,
+    "signed": true
+  }
+}
