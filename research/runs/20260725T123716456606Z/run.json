@@ -1,0 +1,30 @@
+{
+  "run_id": "20260725T123716456606Z",
+  "timestamp_utc": "2026-07-25T12:37:16.460729+00:00",
+  "git_commit": "556eca4959a87defffca3de47d8e3424c3cf2541",
+  "git_dirty": false,
+  "strategy": "null_random",
+  "symbols": [
+    "AUDUSD"
+  ],
+  "seed": 34,
+  "config_hash": "84d56c66e72a1678e6745650f274083195550c105ba0ac9b1f3714ee1e20323f",
+  "config_snapshot": {
+    "strategy": "null_random",
+    "seed": 34,
+    "n_signals": 1857,
+    "signed": true,
+    "timeframe": "H1",
+    "density": 0.05
+  },
+  "data_hashes": {
+    "AUDUSD": "0697eea43c368ab1c421b8fe7ce049ed66cb3edafeb0b68bff7f07e2255ba9bf"
+  },
+  "output_hashes": {
+    "AUDUSD": "984a33c38c1b366d6224bc9f0ed0471a010183ee563636308c63f95af047b066"
+  },
+  "extra": {
+    "purpose": "H-004_session_wider_universe",
+    "timeframe": "H1"
+  }
+}
