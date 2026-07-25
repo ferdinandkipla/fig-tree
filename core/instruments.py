@@ -24,6 +24,12 @@ INSTRUMENT_META = {
         "spread_pips": 1.0,
         "sessions":    ["london", "new_york"],
     },
+    "AUDUSD": {
+        "pip_size":    0.0001,
+        "pip_value":   10.00,
+        "spread_pips": 1.2,
+        "sessions":    ["tokyo", "london", "new_york"],
+    },
 }
 
 SESSION_HOURS = {
