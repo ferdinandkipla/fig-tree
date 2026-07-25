@@ -51,6 +51,9 @@ _DIRTY_CHECK_EXCLUDES = (
     "research/null_runs_signed/",
     "research/null_distribution_summary_signed.csv",
     "research/null_seed_results_signed.csv",
+    # H-004: wider-universe null sweep outputs
+    "research/null_runs_h004/",
+    "research/null_seed_results_h004.csv",
     # H-003: two-arm (A/B) time-exit test outputs.
     "research/h003_runs/",
     "research/h003_null_arm_results.csv",
