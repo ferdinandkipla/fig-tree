@@ -34,10 +34,18 @@ See the Family column below.
 | H-002 | session structure | commit `3ac150f` | KILLED | p<0.05 on 1/3 (GBPJPY), but effect < seed noise | USDJPY, XAUUSD, GBPJPY | H4, long-only null |
 | H-003 | exit-rule value (time-exit) | commit `0bf8102` | KILLED | (A-B) <= 0 on 3/3 (opposite of predicted direction) | USDJPY, XAUUSD, GBPJPY | TRAIN only, real-strategy Arm A/B |
 | H-004 | session structure | commit `8ec8bf9` | KILLED | p<0.05 on 2/5 (USDJPY, GBPJPY), both effect < seed noise | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | 1H primary + H4 secondary, signed null |
-| H-005 | volatility regime (NEW family) | commit `<pending>` | REGISTERED, not yet adjudicated | -- | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | 1H, signed null, ATR-at-entry terciles; analysis-only on H-004's existing data |
+| H-005 | volatility regime (NEW family) | commit `391e6d5` | KILLED | best tercile inconsistent (T1 on 2/5, T3 on 3/5); p=0.006 on GBPJPY clears FDR threshold but effect < seed noise | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | 1H, signed null, ATR-at-entry terciles; analysis-only on H-004's existing data |
 
-**Total hypotheses adjudicated: 4. Registered, pending: 1 (H-005). Survivals: 0. Sub-families: 4**
+**Total hypotheses adjudicated: 5. Survivals: 0. Sub-families: 4**
 (pullback-depth: 1, session-structure: 2, exit-rule: 1, volatility-regime: 1).
+
+**Note on the dispersion check's track record:** 3 of 5 adjudicated
+hypotheses (H-002, H-004, H-005) have had at least one instrument clear
+a raw or FDR-adjusted p-value threshold that the seed-to-seed dispersion
+check then correctly identified as noise, not signal. This is the
+strongest empirical argument yet for treating the dispersion check as
+mandatory infrastructure, not an optional refinement, in every future
+pooled-seed permutation test this registry runs.
 
 ## Correction rule for the NEXT hypothesis (pre-committed, not decided after seeing a result)
 
