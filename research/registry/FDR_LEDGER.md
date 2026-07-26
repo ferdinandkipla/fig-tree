@@ -51,10 +51,16 @@ treating the dispersion check as mandatory infrastructure, not an
 optional refinement, in every future pooled-seed permutation test this
 registry runs.
 
+| H-007 | cross-instrument correlation (NEW family, different evidentiary form) | commit `<pending>` | REGISTERED, not yet adjudicated | -- (no p-value/dispersion check applies -- deterministic price-data measurement, not a null-model test) | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | H1, TRAIN only, direct return-correlation matrix |
+
+**Total hypotheses adjudicated: 6. Registered, pending: 1 (H-007). Survivals: 0. Sub-families: 6**
+(pullback-depth: 1, session-structure: 2, exit-rule: 1, volatility-regime: 1, day-of-week: 1, cross-instrument-correlation: 1).
+
 **Search budget status (per `research/S1_INTERIM_FINDING_5_KILLS.md`):**
-Budget item 2 of 3 (day-of-week) complete. One remaining before the
-committed re-evaluation point: cross-instrument correlation OR
-momentum/mean-reversion at alternate horizons.
+H-007 is the THIRD AND FINAL committed budget item. Once adjudicated,
+the interim finding's own re-evaluation point is reached -- do not
+register hypothesis #8 by momentum; make a deliberate continue/conclude
+decision first.
 
 ## Correction rule for the NEXT hypothesis (pre-committed, not decided after seeing a result)
 
