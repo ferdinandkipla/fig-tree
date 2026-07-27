@@ -51,16 +51,26 @@ treating the dispersion check as mandatory infrastructure, not an
 optional refinement, in every future pooled-seed permutation test this
 registry runs.
 
-| H-007 | cross-instrument correlation (NEW family, different evidentiary form) | commit `<pending>` | REGISTERED, not yet adjudicated | -- (no p-value/dispersion check applies -- deterministic price-data measurement, not a null-model test) | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | H1, TRAIN only, direct return-correlation matrix |
+| H-007 | cross-instrument correlation (NEW family, different evidentiary form) | commit `dd4e58f` | PREDICTION SURVIVES (not an edge finding -- see caveat in H-007.md) | mean pairwise \|corr\|=0.324 < 0.5 threshold; EURUSD-AUDUSD at 0.552 is a flagged exception | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | H1, TRAIN only, direct return-correlation matrix |
 
-**Total hypotheses adjudicated: 6. Registered, pending: 1 (H-007). Survivals: 0. Sub-families: 6**
-(pullback-depth: 1, session-structure: 2, exit-rule: 1, volatility-regime: 1, day-of-week: 1, cross-instrument-correlation: 1).
+**Total hypotheses adjudicated: 7. Kills: 6. Prediction survivals: 1 (H-007, a characterization result, not an edge). Sub-families: 6.**
 
-**Search budget status (per `research/S1_INTERIM_FINDING_5_KILLS.md`):**
-H-007 is the THIRD AND FINAL committed budget item. Once adjudicated,
-the interim finding's own re-evaluation point is reached -- do not
-register hypothesis #8 by momentum; make a deliberate continue/conclude
-decision first.
+## RE-EVALUATION POINT REACHED (2026-07-25)
+
+Per `research/S1_INTERIM_FINDING_5_KILLS.md`'s committed budget (test
+>=3 more distinct mechanism families before any "no exploitable
+structure" conclusion), all three items are now complete:
+day-of-week (H-006, killed), cross-instrument correlation (H-007,
+survived as characterization, not edge). Combined with H-005
+(volatility, killed), that is 7 mechanism-family/market-structure
+tests total, 4 originally + 3 budgeted, with ZERO edge findings and
+one useful portfolio-groundwork measurement.
+
+**This is the deliberate decision point the interim finding committed
+to reaching.** Per that document's own framing: do not register
+hypothesis #8 by momentum. A conscious continue/conclude decision
+should be made and written down before further hypothesis work
+proceeds.
 
 ## Correction rule for the NEXT hypothesis (pre-committed, not decided after seeing a result)
 
