@@ -1,0 +1,6 @@
+symbol,predicted_group,n_thin,n_home,sufficient_n,observed_diff_primary,p_value_primary,observed_diff_secondary_descriptive_only,p_value_secondary_descriptive_only,seed_dispersion_thin,seed_dispersion_home,effect_exceeds_noise,bh_adjusted_threshold,bh_significant
+USDJPY,home_at_tokyo,7913,15923,True,-0.0001,0.9695,-0.0036,0.0295,0.023410001461802662,0.01614952119172103,False,0.05,False
+XAUUSD,thin_at_tokyo,6920,15807,True,0.1395,0.2305,0.0795,0.235,0.7818236259662644,0.5516481510453554,False,0.030000000000000006,False
+GBPJPY,thin_at_tokyo,6996,16905,True,0.0186,0.0005,0.0117,0.0015,0.039835287686771775,0.029740166343721855,False,0.01,True
+EURUSD,thin_at_tokyo,7066,16801,True,0.0,0.2065,0.0,0.118,0.0002194781297600724,0.00015361614876573522,False,0.02,False
+AUDUSD,home_at_tokyo,7693,16158,True,0.0,0.468,0.0,0.0255,0.00025736794299218216,0.0001538741167121177,False,0.04,False

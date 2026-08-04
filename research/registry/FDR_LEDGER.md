@@ -59,9 +59,9 @@ registry runs.
 
 | ID | Family | Registered | Status | Cells | Notes |
 |---|---|---|---|---|---|
-| H-008 | thin-session x high-volatility interaction (NEW family, first Batch 2 test) | this commit | REGISTERED, NOT ADJUDICATED | 5 (one per instrument, tokyo-high-vol-tercile vs rest) | Reuses H-005's frozen ATR tercile edges exactly; 3-bar reversion window primary, 1-bar secondary/non-adjudicating; BLOCKED on per-cell FDR harness (not yet built) before any statistic may be computed. See `research/registry/H-008.md` §4. |
+| H-008 | thin-session x high-volatility interaction (NEW family, first Batch 2 test) | `3e8b155`, amended `b8a8794`, adjudicated this commit | **KILLED** | 5 (one per instrument, tokyo-high-vol-tercile vs rest); corrected 3-vs-2 grouping (EURUSD/XAUUSD/GBPJPY thin vs USDJPY/AUDUSD home) | Reused H-005's frozen ATR tercile edges exactly. GBPJPY's p=0.0005 dies on seed-dispersion (same pattern as H-005's GBPJPY p=0.006) -- 0/3 required cells clear all conditions. See `research/registry/H-008.md` STATUS section. |
 
-**Total hypotheses registered across both batches: 8. Batch 1 adjudicated: 7 (6 kills, 1 characterization survival). Batch 2 registered: 1, adjudicated: 0.**
+**Total hypotheses registered across both batches: 8. Batch 1 adjudicated: 7 (6 kills, 1 characterization survival). Batch 2 adjudicated: 1 (1 kill). Total kills: 7/8. Batch 2 progress: 1/8-12 budgeted, 0 survivors.**
 
 **Note on per-cell accounting:** `research/fdr_check.py` currently counts
 registered hypotheses (files), not cells. The Conditional Search charter

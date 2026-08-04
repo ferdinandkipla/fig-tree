@@ -91,20 +91,32 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
 
 - `research/CONDITIONAL_SEARCH_CHARTER.md` + `research/S1_STOPPING_RULE.md`
   committed `82a4e29`, before any Batch 2 hypothesis was explored.
-- H-008 candidate (thin-session × high-volatility interaction): mechanism
-  memo committed `2b04b66`
-  (`research/registry/MECHANISM-MEMO-H008.md`). **REGISTERED** —
-  `research/registry/H-008.md` committed. Test-design parameters frozen:
-  ATR tercile = reuse of H-005's frozen edges (`H-005-bins.json`), top
-  tercile vs. pooled rest; reversion window = 3 bars primary
-  (non-adjudicating 1-bar secondary also frozen); 5 cells (one per
-  instrument). FDR ledger updated with the registration entry in the
-  same commit.
-- Interaction-capable per-cell FDR analysis harness: **still not built —
-  this is now the sole blocker on adjudicating H-008.** Registration is
-  complete; no statistic may be computed until the harness exists and is
-  validated on a known-answer case (StringArray-bug precedent,
-  `ENGINEERING_STANDARDS.md` §2).
+- **H-008 (thin-session × high-volatility interaction): KILLED.** Full
+  lifecycle complete: mechanism memo (`2b04b66`) → registration
+  (`3e8b155`) → GBPJPY group-assignment amendment (`b8a8794`,
+  corrected 2-vs-3 to 3-vs-2 per `core/instruments.py`'s actual session
+  metadata) → interaction harness built + validated (`2875bb8`) →
+  harness bug caught and fixed (`f5c9cc3`, build_cell was filtering on
+  a stale session column that structurally could never say "tokyo" for
+  EURUSD/XAUUSD/GBPJPY) → adjudicated KILLED. GBPJPY's primary p=0.0005
+  dies on the mandatory seed-dispersion check, same pattern as H-005's
+  GBPJPY p=0.006. Zero of the three required cells (EURUSD, XAUUSD,
+  GBPJPY) clear all conditions; the non-adjudicating GBPJPY-excluded
+  robustness view also fails independently. See
+  `research/registry/H-008.md` STATUS section,
+  `research/H-008-verdict.csv` for full detail.
+- Interaction-capable per-cell FDR analysis harness
+  (`research/interaction_harness.py` + `research/fdr_cells.py`):
+  **built and validated** (`tests/test_interaction_harness.py`,
+  `tests/test_fdr_cells.py`, 15 tests, including a regression test for
+  the stale-session-column bug). This unblocks all future Batch 2
+  interaction hypotheses, not just H-008.
+- **Batch 2 progress: 1 of 8–12 budgeted adjudications complete, 0
+  survivors.** Next candidate per the charter's cost-to-verdict
+  priority order (`RESEARCH_PROGRAM.md` §5): another zero-new-data
+  interaction (e.g. session × volatility on a different session pair,
+  or an interaction between two already-killed marginals) before
+  anything requiring exogenous data.
 
 ## 6. Integrity record (precise claim)
 
