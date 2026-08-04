@@ -93,18 +93,18 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
   committed `82a4e29`, before any Batch 2 hypothesis was explored.
 - H-008 candidate (thin-session × high-volatility interaction): mechanism
   memo committed `2b04b66`
-  (`research/registry/MECHANISM-MEMO-H008.md`), BEFORE any exploratory
-  look at the conditioning variable, per charter sequencing.
-  **NOT YET REGISTERED** — registration file
-  (`research/registry/H-008.md`) not yet created. Two test-design
-  parameters (ATR tercile method, reversion window) are open decisions
-  pending before registration can be committed; they belong in the
-  registration file, not the memo, per the memo's own §5.
-- Interaction-capable per-cell FDR analysis harness: not yet built (see
-  §2 above). This blocks running H-008, not registering it — registration
-  can be committed first per the template's own sequencing
-  (register → then write analysis code), but no statistic may be computed
-  until the harness exists and is validated.
+  (`research/registry/MECHANISM-MEMO-H008.md`). **REGISTERED** —
+  `research/registry/H-008.md` committed. Test-design parameters frozen:
+  ATR tercile = reuse of H-005's frozen edges (`H-005-bins.json`), top
+  tercile vs. pooled rest; reversion window = 3 bars primary
+  (non-adjudicating 1-bar secondary also frozen); 5 cells (one per
+  instrument). FDR ledger updated with the registration entry in the
+  same commit.
+- Interaction-capable per-cell FDR analysis harness: **still not built —
+  this is now the sole blocker on adjudicating H-008.** Registration is
+  complete; no statistic may be computed until the harness exists and is
+  validated on a known-answer case (StringArray-bug precedent,
+  `ENGINEERING_STANDARDS.md` §2).
 
 ## 6. Integrity record (precise claim)
 
@@ -135,13 +135,9 @@ in place.** Every Batch 2 registration must state this caveat explicitly.
 
 ## 8. The decision on the table (as of this update)
 
-None outstanding at the phase level — continue/conclude was decided
-(continue) and is recorded in `docs/PHASE3_CLOSURE.md`. The open
-decisions are tactical, within Phase 4:
-
-1. ATR tercile method for H-008 (per-instrument TRAIN terciles vs. pooled
-   vs. exact H-005 method).
-2. Reversion window (bars-ahead) for H-008's outcome measurement.
-
-Both must be resolved and written into `research/registry/H-008.md`
-before any statistic is computed, per the freeze-then-verdict discipline.
+None outstanding at the phase or hypothesis-design level. Both tactical
+decisions (ATR tercile method, reversion window) are resolved and frozen
+in `research/registry/H-008.md`. **The single remaining blocker before
+any H-008 statistic can be computed is engineering, not a decision:**
+build the interaction-capable per-cell FDR harness, validate it on a
+known-answer case, then run H-008 via freeze-then-verdict.

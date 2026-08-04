@@ -55,6 +55,24 @@ registry runs.
 
 **Total hypotheses adjudicated: 7. Kills: 6. Prediction survivals: 1 (H-007, a characterization result, not an edge). Sub-families: 6.**
 
+## Batch 2 / Phase 4 (Conditional Search) -- chartered `82a4e29`
+
+| ID | Family | Registered | Status | Cells | Notes |
+|---|---|---|---|---|---|
+| H-008 | thin-session x high-volatility interaction (NEW family, first Batch 2 test) | this commit | REGISTERED, NOT ADJUDICATED | 5 (one per instrument, tokyo-high-vol-tercile vs rest) | Reuses H-005's frozen ATR tercile edges exactly; 3-bar reversion window primary, 1-bar secondary/non-adjudicating; BLOCKED on per-cell FDR harness (not yet built) before any statistic may be computed. See `research/registry/H-008.md` §4. |
+
+**Total hypotheses registered across both batches: 8. Batch 1 adjudicated: 7 (6 kills, 1 characterization survival). Batch 2 registered: 1, adjudicated: 0.**
+
+**Note on per-cell accounting:** `research/fdr_check.py` currently counts
+registered hypotheses (files), not cells. The Conditional Search charter
+(`research/CONDITIONAL_SEARCH_CHARTER.md`) requires FDR correction by
+CELL for interaction hypotheses, since a single registration like H-008
+defines multiple comparisons (5 cells). This extension is not yet built.
+H-008 is registered so the sequencing (memo -> registration) is on
+record, but it cannot be adjudicated until the per-cell harness exists
+and is validated on a known-answer case, per `ENGINEERING_STANDARDS.md`
+§2.
+
 ## RE-EVALUATION POINT REACHED (2026-07-25)
 
 Per `research/S1_INTERIM_FINDING_5_KILLS.md`'s committed budget (test
