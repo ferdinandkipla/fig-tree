@@ -1,0 +1,18 @@
+{
+  "hypothesis": "H-008",
+  "reused_bins_from": "H-005",
+  "h005_bins_sha256": "0327177d4ce32b5d45b80b9cf4bb8c72e75d2e77d6f349cff3494a5f77f2914b",
+  "train_end": "2022-01-01",
+  "thin_session": "tokyo",
+  "predicted_group_by_symbol": {
+    "USDJPY": "home_at_tokyo",
+    "XAUUSD": "thin_at_tokyo",
+    "GBPJPY": "thin_at_tokyo",
+    "EURUSD": "thin_at_tokyo",
+    "AUDUSD": "home_at_tokyo"
+  },
+  "primary_k": 3,
+  "secondary_k_non_adjudicating": 1,
+  "n_permutations": 2000,
+  "rng_seed": 43
+}
