@@ -14,6 +14,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from core.instruments import SESSION_HOURS
+
 STORAGE_DIR = Path("data/storage")
 # MT5 timeframe constants (mt5.TIMEFRAME_H1 = 16385); hardcoded here
 # rather than imported from the mt5 package, which requires a live
@@ -69,19 +71,42 @@ def build_cell(symbol: str, pooled_top_tercile_trades: pd.DataFrame,
     pooled_top_tercile_trades: the pooled (across seeds), TRAIN-window,
     TOP-ATR-tercile-only null trades for `symbol` (already filtered by
     the caller using the frozen H-005 bin edges). Must have columns
-    entry_dt, session, seed.
+    entry_dt, seed. (The pre-existing 'session' column is NOT used
+    here -- see note below.)
 
-    Splits into thin-session (tokyo, by default -- per instrument this
-    may be a HOME session; the caller/run_h008.py decides which
-    instruments this split is meaningful for) vs all other sessions,
+    Splits into thin-session (tokyo, by default) vs all other sessions
+    by the bar's ACTUAL CLOCK HOUR against SESSION_HOURS[thin_session],
     computes reversion_k for each retained row.
+
+    IMPORTANT, caught during H-008's first --verdict attempt: the
+    pre-existing per-trade 'session' column (execution/simulator.py's
+    _active_session) only ever labels a bar with a session name drawn
+    from THAT INSTRUMENT'S OWN `sessions` list in core/instruments.py.
+    For an instrument whose own list excludes tokyo (EURUSD, XAUUSD,
+    GBPJPY), a bar occurring during tokyo clock-hours gets session=NaN,
+    NEVER session="tokyo" -- so a naive `df["session"] == "tokyo"`
+    filter silently returns zero rows for exactly the three instruments
+    the thin-at-tokyo mechanism is about. This is a data-join bug, not
+    a market finding: it was caught by inspecting the intermediate
+    n_thin=0 output before trusting any verdict, same discipline as the
+    H-004 StringArray catch. Fixed here by deriving thin/home
+    membership directly from entry_dt's hour-of-day against
+    SESSION_HOURS[thin_session], independent of any instrument's
+    official session list -- this is the correct operationalization of
+    "occurred during Tokyo trading hours" for the mechanism as written,
+    which is about actual clock-time liquidity depth, not which
+    session label a different pipeline happened to assign.
     """
     df = pooled_top_tercile_trades.copy()
     df["reversion"] = df["entry_dt"].apply(lambda dt: compute_reversion(bars, dt, k))
     df = df.dropna(subset=["reversion"])
 
-    thin = df[df["session"] == thin_session]
-    home = df[df["session"] != thin_session]
+    start, end = SESSION_HOURS[thin_session]
+    entry_hour = pd.to_datetime(df["entry_dt"]).dt.hour
+    thin_mask = (entry_hour >= start) & (entry_hour < end)
+
+    thin = df[thin_mask]
+    home = df[~thin_mask]
 
     return CellData(
         cell_id=symbol,

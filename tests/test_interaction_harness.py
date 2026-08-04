@@ -164,22 +164,61 @@ def test_seed_dispersion_single_seed_returns_nan():
 
 
 def test_build_cell_thin_home_split_is_correct():
-    """End-to-end on synthetic bars + synthetic trades: verify the
-    thin/home split lands the right rows in the right bucket and that
-    reversion values match hand computation."""
+    """
+    End-to-end on synthetic bars + synthetic trades: verify the
+    thin/home split lands the right rows in the right bucket, using
+    the bar's ACTUAL CLOCK HOUR against SESSION_HOURS['tokyo']=(0,9) --
+    not a pre-existing 'session' column. idx starts at 2020-01-01 00:00
+    and increments by 1h, so idx[5]=hour 5 (tokyo), idx[10]=hour 10
+    (not tokyo), idx[15]=hour 15 (not tokyo). Deliberately does NOT
+    supply a 'session' column at all, matching build_cell's current
+    signature requirement (entry_dt, seed only).
+    """
     bars = _make_bars(n=20, seed=1)
     idx = bars.index
 
     trades = pd.DataFrame({
         "entry_dt": [idx[5], idx[10], idx[15]],
-        "session": ["tokyo", "london", "tokyo"],
         "seed": [0, 0, 1],
     })
 
     cell = build_cell("SYNTH", trades, bars, k=1, thin_session="tokyo")
-    assert len(cell.thin_reversion) == 2   # idx[5], idx[15]
-    assert len(cell.home_reversion) == 1   # idx[10]
+    assert len(cell.thin_reversion) == 1   # idx[5], hour=5, in [0,9)
+    assert len(cell.home_reversion) == 2   # idx[10] hour=10, idx[15] hour=15
 
     expected_5 = compute_reversion(bars, idx[5], 1)
-    expected_15 = compute_reversion(bars, idx[15], 1)
-    assert set(cell.thin_reversion) == {expected_5, expected_15}
+    assert set(cell.thin_reversion) == {expected_5}
+
+
+def test_build_cell_ignores_stale_session_column_uses_hour_instead():
+    """
+    REGRESSION TEST for the exact bug caught in H-008's first --verdict
+    attempt: real trade data carries a pre-existing 'session' column
+    (execution/simulator.py's _active_session) that is NaN -- never
+    literally "tokyo" -- for any instrument whose own `sessions` list
+    in core/instruments.py excludes tokyo (EURUSD, XAUUSD, GBPJPY in
+    the real data). A build_cell implementation that filtered on
+    `df["session"] == "tokyo"` would silently return zero thin-group
+    rows for exactly those three instruments -- the bug this test
+    exists to prevent from ever recurring.
+
+    Constructs trades with an EURUSD-like stale session column (NaN
+    for the tokyo-hour row) and confirms build_cell still correctly
+    buckets by clock hour, ignoring the stale column entirely.
+    """
+    bars = _make_bars(n=20, seed=2)
+    idx = bars.index  # idx[3] = hour 3 (tokyo), idx[12] = hour 12 (not tokyo)
+
+    trades = pd.DataFrame({
+        "entry_dt": [idx[3], idx[12]],
+        "session": [float("nan"), "new_york"],  # realistic: NaN, never "tokyo"
+        "seed": [0, 0],
+    })
+
+    cell = build_cell("EURUSD_LIKE", trades, bars, k=1, thin_session="tokyo")
+    assert len(cell.thin_reversion) == 1, (
+        "build_cell must classify the tokyo-hour row as 'thin' via clock "
+        "hour, even though its stale 'session' column value is NaN, not "
+        "'tokyo'. A regression here reintroduces the H-008 n_thin=0 bug."
+    )
+    assert len(cell.home_reversion) == 1
