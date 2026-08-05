@@ -63,6 +63,19 @@ registry runs.
 
 **Total hypotheses registered across both batches: 8. Batch 1 adjudicated: 7 (6 kills, 1 characterization survival). Batch 2 adjudicated: 1 (1 kill). Total kills: 7/8. Batch 2 progress: 1/8-12 budgeted, 0 survivors.**
 
+**Note on GBPJPY (pattern, not incident):** GBPJPY has now produced
+raw-significant p-values that die on the seed-to-seed dispersion check
+TWICE -- H-005 (p=0.006) and H-008 (p=0.0005). Both times the effect
+size was smaller than the dispersion generated purely by which random
+bars a given seed happened to sample. This instrument appears prone to
+generating noise that looks like signal in this pipeline more readily
+than the other four. Consequence for future work: any mechanism memo
+predicting an effect specifically on GBPJPY should expect the
+dispersion check, not the raw p-value, to be the binding test -- and
+any future GBPJPY survival of that check deserves extra scrutiny before
+being taken at face value, precedent-adjusted for this instrument's
+track record.
+
 **Note on per-cell accounting:** `research/fdr_check.py` currently counts
 registered hypotheses (files), not cells. The Conditional Search charter
 (`research/CONDITIONAL_SEARCH_CHARTER.md`) requires FDR correction by
