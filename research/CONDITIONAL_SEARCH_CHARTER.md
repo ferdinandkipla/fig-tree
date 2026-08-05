@@ -128,6 +128,12 @@ no longer a differentiator** (see Section 6 on the bottleneck shift).
    mechanism memo referencing it can be committed. Do not schedule this
    as if the data already exists.
 
+## 4a. Disqualified candidates (committed here so a future session does not independently rediscover and draft these)
+
+| Candidate | Status | Reason |
+|---|---|---|
+| Pullback depth (H-001) × trend state | **DISQUALIFIED, not merely deprioritized** | Trend-pullback resurrection risk, per `LESSONS_LEARNED.md` Sec 3.1/`AI_ONBOARDING.md` Sec 3: "pullback entries work conditional on trend strength" is uncomfortably close to re-deriving the retired `trend_pullback` strategy's own ADX-ceiling logic with an interaction label on it. Disqualified on appearance-plus-kinship grounds before any mechanism-memo drafting was attempted, not after a memo failed the bar. |
+
 ## 5. Statistical safeguards, extended for the conditional family
 
 **FDR accounting by cell, not by registration.** Session × volatility
