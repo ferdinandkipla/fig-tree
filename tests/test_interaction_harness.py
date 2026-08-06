@@ -190,6 +190,30 @@ def test_build_cell_thin_home_split_is_correct():
     assert set(cell.thin_reversion) == {expected_5}
 
 
+def test_build_cell_calendar_splits_by_near_month_end_not_session():
+    """
+    build_cell_calendar for the H-009 candidate: verify it runs and
+    routes entries to thin (near-month-end)/home (ordinary) buckets
+    without error, wiring is_near_month_end() into the reversion
+    pipeline correctly. The calendar logic itself is validated
+    exhaustively in tests/test_calendar_distance.py -- this test is
+    plumbing-only.
+    """
+    from research.interaction_harness import build_cell_calendar
+    bars = _make_bars(n=200, seed=3)  # 2020-01-01 + 200 hourly bars,
+    # spans from Jan 1 through Jan 9 2020 -- includes no month-end,
+    # so this specific run should land everything in 'ordinary'.
+    idx = bars.index
+    trades = pd.DataFrame({
+        "entry_dt": [idx[10], idx[20]],
+        "seed": [0, 1],
+    })
+    cell = build_cell_calendar("SYNTH", trades, bars, k=1)
+    assert cell.cell_id == "SYNTH"
+    assert len(cell.thin_reversion) == 0   # no month-end in this window
+    assert len(cell.home_reversion) == 2   # both land in 'ordinary'
+
+
 def test_build_cell_ignores_stale_session_column_uses_hour_instead():
     """
     REGRESSION TEST for the exact bug caught in H-008's first --verdict

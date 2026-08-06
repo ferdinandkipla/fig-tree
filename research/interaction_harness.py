@@ -117,6 +117,40 @@ def build_cell(symbol: str, pooled_top_tercile_trades: pd.DataFrame,
     )
 
 
+def build_cell_calendar(symbol: str, pooled_top_tercile_trades: pd.DataFrame,
+                         bars: pd.DataFrame, k: int) -> CellData:
+    """
+    Calendar-conditioned counterpart to build_cell -- splits by
+    near-month-end (research.calendar_distance.is_near_month_end) vs.
+    the rest, instead of by session/clock-hour. Used by the H-009
+    candidate (month-end proximity x high-volatility). Reuses
+    compute_reversion, CellData, permutation_test, and seed_dispersion
+    unchanged -- only the group-membership rule differs from
+    build_cell.
+
+    pooled_top_tercile_trades: as in build_cell -- must have columns
+    entry_dt, seed.
+    """
+    from research.calendar_distance import is_near_month_end
+
+    df = pooled_top_tercile_trades.copy()
+    df["reversion"] = df["entry_dt"].apply(lambda dt: compute_reversion(bars, dt, k))
+    df = df.dropna(subset=["reversion"])
+
+    near_me_mask = pd.to_datetime(df["entry_dt"]).apply(lambda ts: is_near_month_end(ts.date()))
+
+    near_me = df[near_me_mask]
+    ordinary = df[~near_me_mask]
+
+    return CellData(
+        cell_id=symbol,
+        thin_reversion=near_me["reversion"].to_numpy(dtype=float),
+        thin_seeds=near_me["seed"].to_numpy(),
+        home_reversion=ordinary["reversion"].to_numpy(dtype=float),
+        home_seeds=ordinary["seed"].to_numpy(),
+    )
+
+
 def permutation_test(cell: CellData, n_permutations: int, rng: np.random.Generator):
     """
     Two-sample permutation test on the difference of means
