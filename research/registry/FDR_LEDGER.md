@@ -60,8 +60,9 @@ registry runs.
 | ID | Family | Registered | Status | Cells | Notes |
 |---|---|---|---|---|---|
 | H-008 | thin-session x high-volatility interaction (NEW family, first Batch 2 test) | `3e8b155`, amended `b8a8794`, adjudicated this commit | **KILLED** | 5 (one per instrument, tokyo-high-vol-tercile vs rest); corrected 3-vs-2 grouping (EURUSD/XAUUSD/GBPJPY thin vs USDJPY/AUDUSD home) | Reused H-005's frozen ATR tercile edges exactly. GBPJPY's p=0.0005 dies on seed-dispersion (same pattern as H-005's GBPJPY p=0.006) -- 0/3 required cells clear all conditions. See `research/registry/H-008.md` STATUS section. |
+| H-009 | month-end proximity x high-volatility interaction | this commit | REGISTERED, NOT ADJUDICATED | 1 primary (pooled across instruments, no per-instrument asymmetry predicted); quarter-end margin and low/mid-tercile arm both non-adjudicating, outside BH accounting | Surfaced by (not a rescue of) the rejected day-of-week x volatility no-candidate. New calendar-distance derived variable (`research/calendar_distance.py`), 12 known-answer tests. Occupancy checked pre-registration: smallest binding sub-cell (XAUUSD, quarter-end-only) = 482 events. See `research/registry/H-009.md` and `research/registry/MECHANISM-MEMO-H009.md`. |
 
-**Total hypotheses registered across both batches: 8. Batch 1 adjudicated: 7 (6 kills, 1 characterization survival). Batch 2 adjudicated: 1 (1 kill). Total kills: 7/8. Batch 2 progress: 1/8-12 budgeted, 0 survivors.**
+**Total hypotheses registered across both batches: 9. Batch 1 adjudicated: 7 (6 kills, 1 characterization survival). Batch 2: 2 registered (1 adjudicated/killed, 1 pending verdict). Total kills so far: 7/8 adjudicated. Batch 2 progress: 2/8-12 budgeted registered, 1 adjudicated, 0 survivors.**
 
 **Note on GBPJPY (pattern, not incident):** GBPJPY has now produced
 raw-significant p-values that die on the seed-to-seed dispersion check
