@@ -1,0 +1,11 @@
+{
+  "hypothesis": "H-009",
+  "reused_bins_from": "H-005",
+  "h005_bins_sha256": "0327177d4ce32b5d45b80b9cf4bb8c72e75d2e77d6f349cff3494a5f77f2914b",
+  "train_end": "2022-01-01",
+  "primary_k": 3,
+  "secondary_k_non_adjudicating": 1,
+  "low_mid_undercut_fraction": 0.5,
+  "n_permutations": 2000,
+  "rng_seed": 44
+}
