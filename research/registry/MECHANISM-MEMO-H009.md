@@ -80,6 +80,12 @@ Full known-answer validation: `tests/test_calendar_distance.py`
 run and passing BEFORE this memo's occupancy check (Section 6) or any
 outcome data was touched.
 
+**Low/mid-tercile arm occupancy (added with the arm amendment above,
+same denominators-only discipline):** near-month-end bars in ATR
+terciles 1-2 (pooled), per instrument: USDJPY 4168, XAUUSD 4338,
+GBPJPY 4685, EURUSD 4123, AUDUSD 4228. All comfortably above any
+reasonable power floor -- no occupancy concern for this arm.
+
 ## 4. Volatility conditioning
 
 Reuses H-005's frozen per-instrument TRAIN ATR terciles exactly
@@ -124,6 +130,51 @@ test it conditions on).
   stronger than quarter-ends) would be a specific, disclosed
   embarrassment for the mechanism story, stated here so it can't be
   quietly dropped from the writeup later.
+
+### AMENDMENT (dated, this commit) -- non-adjudicating low/mid-tercile arm
+
+**Gap caught at pre-freeze review, before any occupancy or outcome
+data was examined for this arm specifically:** Refutation clause 1
+above claims a comparison "across ALL volatility regimes," but the
+originally-planned analysis only ever computes top-ATR-tercile bars --
+it has no arm that could actually test whether the near-month-end
+effect is high-vol-specific versus a plain marginal month-end effect
+that happens to also show up when filtered to high vol. Without a
+low/mid-tercile comparison, the memo's stated claim and the executed
+test are not the same object. Adding the arm rather than narrowing the
+clause, because narrowing would quietly convert this from a
+state-dependent interaction hypothesis into a weaker, less specific
+"month-end marginal conditioned on high vol" claim -- and
+state-dependence is the actual content of the mechanism (Section 1).
+
+**The arm, added with three pre-committed constraints:**
+
+1. **Concrete interpretation criterion, frozen now:** the low/mid-
+   tercile arm (near-month-end vs. ordinary, restricted to bars in
+   ATR terciles 1-2, i.e. NOT the top tercile, same
+   `H-005-bins.json` edges) "undercuts the interaction reading" if and
+   only if its effect size (same signed reversion metric, same k=3
+   primary window) is >= 50% of the top-tercile primary effect's
+   magnitude AND has the same sign. Below 50%, or opposite sign, the
+   interaction reading (effect is high-vol-specific) stands
+   unchallenged by this arm. This is stated now, before any number is
+   seen, precisely so "comparably-sized" isn't a negotiable phrase
+   after the fact.
+2. **Asymmetric role, stated explicitly:** this arm can only undercut
+   a POSITIVE top-tercile result -- it has no power to rescue a
+   negative one. If the top-tercile primary fails its own kill
+   criteria (Section 5's cell-of-interest test), H-009 is KILLED
+   regardless of what the low/mid arm shows. There is no "but the
+   low-vol arm is interesting" pivot available at verdict time.
+3. **Identical statistical treatment, not a lower-rigor sidecar:** the
+   low/mid arm is computed through the SAME `permutation_test` /
+   `seed_dispersion` path as the primary (via `build_cell_calendar`,
+   unchanged), so its reported effect size and noise band are directly
+   comparable to the primary's on equal footing -- not a raw point
+   estimate sitting next to a dispersion-checked number. It remains
+   non-adjudicating in the FDR sense (no BH correction slot, does not
+   count toward the per-cell significance budget) but gets full
+   rigor otherwise.
 
 ## 6. Occupancy check (denominators only -- no outcome data)
 
