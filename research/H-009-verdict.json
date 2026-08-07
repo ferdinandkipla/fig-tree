@@ -1,0 +1,23 @@
+{
+  "primary": {
+    "n_thin": 11769,
+    "n_home": 106413,
+    "sufficient_n": true,
+    "observed_diff": -0.007,
+    "p_value": 0.8375,
+    "effect_exceeds_noise": false,
+    "reverts_not_persists": false,
+    "significant": false,
+    "survives": false
+  },
+  "quarter_end_margin": {
+    "quarter_end_diff": 0.0093,
+    "ordinary_month_end_diff": -0.0134,
+    "quarter_end_stronger_as_predicted": true
+  },
+  "low_mid_arm": {
+    "observed_diff": 0.0168,
+    "p_value": 0.2745,
+    "undercuts_interaction_reading": false
+  }
+}

@@ -111,12 +111,30 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
   `tests/test_fdr_cells.py`, 15 tests, including a regression test for
   the stale-session-column bug). This unblocks all future Batch 2
   interaction hypotheses, not just H-008.
-- **Batch 2 progress: 1 of 8–12 budgeted adjudications complete, 0
-  survivors.** Next candidate per the charter's cost-to-verdict
-  priority order (`RESEARCH_PROGRAM.md` §5): another zero-new-data
-  interaction (e.g. session × volatility on a different session pair,
-  or an interaction between two already-killed marginals) before
-  anything requiring exogenous data.
+- **Batch 2 progress: 2 of 8–12 budgeted adjudications complete (both
+  killed), plus 1 documented no-candidate
+  (day-of-week × volatility, rejected at mechanism-memo stage before
+  registration). 0 survivors.**
+  - H-008 (thin-session × high-volatility): KILLED. Full lifecycle in
+    `research/registry/H-008.md`.
+  - H-009 (month-end proximity × high-volatility): KILLED. Unambiguous
+    -- p=0.8375, within seed noise, and wrong sign (continuation, not
+    reversion). Surfaced by the day-of-week no-candidate's own
+    analysis, not a rescue of it. New calendar-distance derived
+    variable (`research/calendar_distance.py`) built and validated
+    (12 known-answer tests) along the way -- reusable for any future
+    calendar-anchored candidate. Full lifecycle:
+    `research/registry/MECHANISM-MEMO-H009.md` (memo, amended once at
+    pre-freeze review to add a non-adjudicating low/mid-tercile arm
+    closing a design gap between a refutation clause and what the
+    analysis actually tested) → `research/registry/H-009.md`
+    (registration + STATUS).
+  - Next candidate per the charter's cost-to-verdict priority order:
+    a killed×killed interaction (per the charter's own reasoning,
+    testing whether "marginals exhausted, interactions might not be"
+    holds outside the session family). H-001 × trend-state is
+    DISQUALIFIED (`research/CONDITIONAL_SEARCH_CHARTER.md` §4a,
+    trend_pullback resurrection risk) -- not a candidate.
 
 ## 6. Integrity record (precise claim)
 

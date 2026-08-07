@@ -228,11 +228,11 @@ def compute_verdict():
 
     result = {
         "primary": {
-            "n_thin": n_thin, "n_home": n_home, "sufficient_n": sufficient_n,
-            "observed_diff": round(obs_primary, 4) if not np.isnan(obs_primary) else None,
-            "p_value": p_primary, "effect_exceeds_noise": effect_exceeds_noise,
-            "reverts_not_persists": reverts_not_persists,
-            "significant": primary_significant, "survives": primary_survives,
+            "n_thin": int(n_thin), "n_home": int(n_home), "sufficient_n": bool(sufficient_n),
+            "observed_diff": round(float(obs_primary), 4) if not np.isnan(obs_primary) else None,
+            "p_value": p_primary, "effect_exceeds_noise": bool(effect_exceeds_noise),
+            "reverts_not_persists": bool(reverts_not_persists),
+            "significant": bool(primary_significant), "survives": bool(primary_survives),
         }
     }
 
@@ -255,9 +255,9 @@ def compute_verdict():
     qe_stronger = (not np.isnan(obs_qe)) and (not np.isnan(obs_ord)) and (obs_qe > obs_ord)
     print(f"  Quarter-end stronger than ordinary month-end (predicted): {qe_stronger}")
     result["quarter_end_margin"] = {
-        "quarter_end_diff": round(obs_qe, 4) if not np.isnan(obs_qe) else None,
-        "ordinary_month_end_diff": round(obs_ord, 4) if not np.isnan(obs_ord) else None,
-        "quarter_end_stronger_as_predicted": qe_stronger,
+        "quarter_end_diff": round(float(obs_qe), 4) if not np.isnan(obs_qe) else None,
+        "ordinary_month_end_diff": round(float(obs_ord), 4) if not np.isnan(obs_ord) else None,
+        "quarter_end_stronger_as_predicted": bool(qe_stronger),
     }
 
     # Low/mid-tercile arm (non-adjudicating), same permutation/dispersion path.
@@ -282,8 +282,8 @@ def compute_verdict():
               "this arm has no power to change a KILLED verdict.")
 
     result["low_mid_arm"] = {
-        "observed_diff": round(obs_lm, 4) if not np.isnan(obs_lm) else None,
-        "p_value": p_lm, "undercuts_interaction_reading": undercuts,
+        "observed_diff": round(float(obs_lm), 4) if not np.isnan(obs_lm) else None,
+        "p_value": p_lm, "undercuts_interaction_reading": bool(undercuts),
     }
 
     final_verdict = "KILLED" if not primary_survives else ("SURVIVES (undercut by low/mid arm)" if undercuts else "SURVIVES")
