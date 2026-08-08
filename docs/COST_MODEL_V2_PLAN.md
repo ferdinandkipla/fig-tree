@@ -115,6 +115,47 @@ are otherwise unaffected by this commit (swap/spread costs for AUDUSD
 still run on the existing placeholder spread, now explicitly flagged
 rather than silently trusted).
 
+### AMENDMENT (dated, this commit) -- sharper equivalence check, cascade-aware
+
+**Finding from Commit 1's regeneration:** the size-scaling fix cascades
+through every subsequent trade's position sizing (`position_size()`
+compounds off `self.capital`), not just the trade whose own cost
+changed. Commit 2's swap addition will cascade the same way. Under
+compounding, "the compounded diff matches expectations" degrades into
+"everything downstream of the first affected trade changed, as
+expected" -- which is true but UNFALSIFIABLE in the direction that
+matters (a genuinely wrong swap formula would ALSO produce "everything
+changed," indistinguishable from a correct one by looking at the
+compounded aggregate alone). The equivalence check as originally
+scoped in this section is too permissive for Commit 2. Sharpened check,
+required before trusting Commit 2's output:
+
+1. **Isolated-term check (cascade-immune, the primary correctness
+   burden):** for a sample of trades spanning multiple rollover-night
+   counts (0, 1, 3-including-a-Wednesday, multi-day), recompute
+   `swap_cost` BY HAND (nights crossed x rate x size, using the
+   trade's own already-fixed `entry_dt`/`exit_dt`/`size`/`direction`)
+   and assert EXACT match against the model's own computed term. This
+   check does not touch `pnl` or any compounded/cumulative value at
+   all -- it is immune to the cascade by construction, so a mismatch
+   here is unambiguous evidence of a formula bug, not cascade noise.
+2. **Zero-crossing population assertion (cascade-immune, full
+   population):** every trade with zero rollover-boundary crossings in
+   `[entry_dt, exit_dt)` must have `swap_cost == 0.0` EXACTLY, checked
+   across the FULL trade population (not a sample) for every symbol.
+   This is also cascade-immune -- a trade's own swap term depends only
+   on its own dates/size/direction, never on any other trade's cost.
+3. **Compounded aggregates (`pnl`, `final_capital`, regenerated
+   `research/trades_*.csv`), demoted to plausibility-only:** direction
+   (swap-exposed trades' `pnl` should move by roughly the hand-computed
+   swap magnitude) and rough magnitude, NOT exact-match -- the
+   correctness burden is carried entirely by checks 1 and 2 above, not
+   by eyeballing the compounded aggregate.
+
+This ordering -- isolated term exact, population-zero exact, aggregate
+plausibility-only -- is the direct fix for the permissiveness problem,
+and is required before Commit 2 is trusted, not optional polish.
+
 ## 4. Errata note (named deliverable, independent of the fix)
 
 A committed disclosure, either as a new `research/COST_MODEL_ERRATA.md`
@@ -127,6 +168,21 @@ mis-scaled model, which hypotheses (H-008, H-009) were NEVER exposed
 (they consume raw price reversion via `research/interaction_harness.py`,
 never `total_cost()` or the `pnl`/`pnl_gross` columns), and the
 verified (not merely asserted) outcome of Section 5's re-check.
+
+**Must also state the compounding cascade explicitly** (found during
+Commit 1's regeneration, Section 3's amendment): fixing the cost model
+does not produce a small, isolated perturbation to affected trades --
+because `position_size()` compounds off `self.capital`, EVERY trade
+after the first cost-affected one has its `size`, `pnl_gross`, and
+`pnl` shift too, even though only the cost term's formula changed. So
+"verified unaffected" (Section 5) sits next to "every downstream number
+moved" -- both true simultaneously, and a future reader must not read
+the second as contradicting the first. The re-verification's
+kill-confirmation logic is unaffected by the cascade (each
+hypothesis's own statistic is recomputed fresh on the corrected `pnl`
+values, not diffed against old ones), but the errata note must say so
+plainly rather than let the scale of the diff read as alarming on its
+own.
 
 ## 5. Past-verdict re-verification (explicit checklist, part of the equivalence work)
 
