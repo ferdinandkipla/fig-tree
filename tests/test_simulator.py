@@ -122,9 +122,14 @@ def test_trade_a_sizing_and_pnl(result):
     assert t["pnl_pips"] == pytest.approx(300.0)
     # pnl_gross = 300 * 9.10 * 0.0733 = 200.109
     assert t["pnl_gross"] == pytest.approx(200.11, abs=0.01)
-    # total_cost = 1.5*0.01*9.10 + 1*0.01*9.10 = 0.2275
-    # pnl_net = 200.109 - 0.2275 = 199.8815 -> rounded 199.88
-    assert t["pnl"] == pytest.approx(199.88, abs=0.01)
+    # total_cost (v2, size-scaled): (1.5*0.01*9.10 + 1*0.01*9.10) * size
+    #   = 0.2275 * 0.0733 = 0.01667075
+    # (PRE-v2 this test asserted a flat 0.2275, i.e. the ONE-STANDARD-LOT
+    # cost applied regardless of this trade's actual 0.0733-lot size --
+    # that was the bug cost model v2 fixed. See
+    # docs/COST_MODEL_V2_PLAN.md Sec 1 / research/COST_MODEL_ERRATA.md.)
+    # pnl_net = 200.109 - 0.01667 = 200.0923 -> rounded 200.09
+    assert t["pnl"] == pytest.approx(200.09, abs=0.01)
 
 
 def test_trade_a_entry_features_captured(result):
@@ -158,16 +163,22 @@ def test_trade_b_sizing_and_pnl(result):
     t = result["trades"].iloc[1]
     # NOTE: same 150-pip stop distance as Trade A, but position_size uses
     # self.capital at open time — which has ALREADY grown from Trade A's
-    # profit (10199.8815, not the original 10000). Sizing compounds.
-    #   risk_amount = 10199.8815 * 0.01 = 101.998815
+    # profit. Under cost model v2 (size-scaled cost), Trade A's net pnl
+    # is 200.0923 (not the pre-v2 199.8815 -- see test_trade_a_sizing_and_pnl),
+    # so capital at Trade B's open = 10200.0923.
+    #   risk_amount = 10200.0923 * 0.01 = 102.000923
     #   risk_per_lot = 150 * 9.10 = 1365
-    #   size = round(101.998815 / 1365, 4) = 0.0747
+    #   size = round(102.000923 / 1365, 4) = 0.0747 (same rounded size as
+    #   pre-v2 -- the capital difference is too small to move the
+    #   4-decimal rounding)
     assert t["size"] == pytest.approx(0.0747)
     assert t["pnl_pips"] == pytest.approx(-150.0)
-    # pnl_gross = -150 * 9.10 * 0.0747 = -101.9655
+    # pnl_gross = -150 * 9.10 * 0.0747 = -101.9655 (unchanged -- same size)
     assert t["pnl_gross"] == pytest.approx(-101.97, abs=0.01)
-    # pnl_net = -101.9655 - 0.2275 = -102.193 -> rounded -102.19
-    assert t["pnl"] == pytest.approx(-102.19, abs=0.01)
+    # total_cost (v2, size-scaled) = 0.2275 * 0.0747 = 0.01698525
+    # (PRE-v2: flat 0.2275, giving pnl=-102.19 -- the bug cost model v2 fixed)
+    # pnl_net = -101.9655 - 0.01698525 = -101.98248525 -> rounded -101.98
+    assert t["pnl"] == pytest.approx(-101.98, abs=0.01)
 
 
 def test_trade_b_entry_features_captured(result):
@@ -182,9 +193,10 @@ def test_trade_b_entry_features_captured(result):
 # ── Capital / equity-curve ordering (M0 fix #10) ────────────────────────
 
 def test_final_capital(result):
-    # 10000 + 199.8815 (Trade A) - 102.193 (Trade B, compounded sizing)
-    # = 10097.6885 -> rounded 10097.69
-    assert result["final_capital"] == pytest.approx(10097.69, abs=0.01)
+    # 10000 + 200.0923 (Trade A, v2 size-scaled cost) - 101.9825 (Trade B,
+    # v2 size-scaled cost, compounded sizing) = 10098.1098 -> rounded 10098.11
+    # (PRE-v2 this asserted 10097.69, under the flat-cost bug.)
+    assert result["final_capital"] == pytest.approx(10098.11, abs=0.01)
 
 
 def test_equity_reflects_close_same_bar_not_lagged(result):
@@ -192,15 +204,17 @@ def test_equity_reflects_close_same_bar_not_lagged(result):
     # This is the regression check for the equity-ordering fix (M0 #10):
     # previously equity was appended BEFORE trade management, lagging
     # every close by one bar.
+    # (Values updated for cost model v2's size-scaled total_cost --
+    # see test_trade_a_sizing_and_pnl / test_trade_b_sizing_and_pnl.)
     eq = [pt["equity"] for pt in result["equity_curve"]]
     # eq[0..6] correspond to bars i=1..7
     assert eq[0] == pytest.approx(10000.0)                    # i=1: trade just opened, no close yet
     assert eq[1] == pytest.approx(10000.0)                    # i=2: still open
-    assert eq[2] == pytest.approx(10199.8815, abs=0.001)      # i=3: Trade A closes THIS bar
-    assert eq[3] == pytest.approx(10199.8815, abs=0.001)      # i=4: unchanged, no trade
-    assert eq[4] == pytest.approx(10199.8815, abs=0.001)      # i=5: Trade B just opened
-    assert eq[5] == pytest.approx(10097.6885, abs=0.001)      # i=6: Trade B closes THIS bar
-    assert eq[6] == pytest.approx(10097.6885, abs=0.001)      # i=7: unchanged, no trade
+    assert eq[2] == pytest.approx(10200.0923, abs=0.001)      # i=3: Trade A closes THIS bar
+    assert eq[3] == pytest.approx(10200.0923, abs=0.001)      # i=4: unchanged, no trade
+    assert eq[4] == pytest.approx(10200.0923, abs=0.001)      # i=5: Trade B just opened
+    assert eq[5] == pytest.approx(10098.1098, abs=0.001)      # i=6: Trade B closes THIS bar
+    assert eq[6] == pytest.approx(10098.1098, abs=0.001)      # i=7: unchanged, no trade
 
 
 # ── Pessimistic-fill sanity check (independent of the two designed trades) ──

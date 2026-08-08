@@ -19,7 +19,8 @@ import argparse
 import pandas as pd
 
 
-def verify(old_path: str, new_path: str) -> bool:
+def verify(old_path: str, new_path: str, exclude_columns=None) -> bool:
+    exclude_columns = set(exclude_columns or [])
     old = pd.read_csv(old_path)
     new = pd.read_csv(new_path)
 
@@ -27,12 +28,14 @@ def verify(old_path: str, new_path: str) -> bool:
     new_cols = set(new.columns)
     added   = new_cols - old_cols
     removed = old_cols - new_cols
-    shared  = sorted(old_cols & new_cols)
+    shared  = sorted((old_cols & new_cols) - exclude_columns)
 
     print(f"Old: {old_path}  shape={old.shape}")
     print(f"New: {new_path}  shape={new.shape}")
     print(f"Columns added:   {sorted(added) or '(none)'}")
     print(f"Columns removed: {sorted(removed) or '(none)'}")
+    if exclude_columns:
+        print(f"Columns excluded from comparison (caller-specified): {sorted(exclude_columns)}")
 
     if old.shape[0] != new.shape[0]:
         print(f"FAIL: row count differs ({old.shape[0]} vs {new.shape[0]}) "

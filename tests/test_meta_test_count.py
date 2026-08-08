@@ -35,7 +35,7 @@ TESTS_DIR = Path(__file__).parent
 # not a bug. The guards purpose is catching a function DEFINITION
 # silently vanishing (e.g. a clobbered def line), which it does
 # correctly regardless of parametrization.
-EXPECTED_TEST_COUNT = 46
+EXPECTED_TEST_COUNT = 50  # +4 tests/test_costs.py, cost model v2 Commit 1
 
 
 def _count_test_functions_in_file(path: Path) -> int:

@@ -160,6 +160,7 @@ verification layer works; report it, never hide it.
 | Cost model v2 (swap integration) | **NOT DONE** |
 | AUDUSD real contract specs (replace 1.2-pip placeholder) | **NOT DONE** |
 | Interaction-capable per-cell analysis harness | **NOT DONE** — blocks H-008 execution |
+| `tests/test_determinism.py` mutates committed `research/` CSVs in place as a side effect | **NOT DONE** — surfaced during cost model v2 (`docs/COST_MODEL_V2_PLAN.md`). A routine `pytest` invocation regenerates `research/trades_*.csv`/`regime_*.csv`/`yearly_*.csv` in the working tree via `main.py`, producing an unexplained dirty tree after any ordinary test run — possibly the same root cause as the ledger-freeze dirty-tree warnings already tolerated elsewhere (`research/run_h008.py`/`run_h009.py`'s manifest-freeze WARNING). Fix: the determinism test should regenerate into a temp directory and compare there, not overwrite `research/` in place. Out of scope for cost model v2 itself — logged, not fixed, to avoid blurring that change's diff manifest. |
 
 **Consequence, stated explicitly:** Batch 2 KILL adjudications are valid
 under the current cost model (placeholder/simplistic costs only make a

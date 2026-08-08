@@ -214,8 +214,9 @@ class Simulator:
         pnl_pips    = price_delta / meta["pip_size"]          # → pips
         pnl_gross   = pnl_pips * meta["pip_value"] * t.size   # → dollars
 
-        # Instrument-aware costs (already in dollars)
-        pnl_net      = pnl_gross - total_cost(self.symbol)
+        # Instrument-aware costs (already in dollars), scaled by size
+        # (cost model v2 fix -- see execution/costs.py header)
+        pnl_net      = pnl_gross - total_cost(self.symbol, t.size)
         self.capital += pnl_net
 
         trade_record = {
