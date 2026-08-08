@@ -111,30 +111,34 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
   `tests/test_fdr_cells.py`, 15 tests, including a regression test for
   the stale-session-column bug). This unblocks all future Batch 2
   interaction hypotheses, not just H-008.
-- **Batch 2 progress: 2 of 8–12 budgeted adjudications complete (both
-  killed), plus 1 documented no-candidate
-  (day-of-week × volatility, rejected at mechanism-memo stage before
-  registration). 0 survivors.**
-  - H-008 (thin-session × high-volatility): KILLED. Full lifecycle in
-    `research/registry/H-008.md`.
-  - H-009 (month-end proximity × high-volatility): KILLED. Unambiguous
-    -- p=0.8375, within seed noise, and wrong sign (continuation, not
-    reversion). Surfaced by the day-of-week no-candidate's own
-    analysis, not a rescue of it. New calendar-distance derived
-    variable (`research/calendar_distance.py`) built and validated
-    (12 known-answer tests) along the way -- reusable for any future
-    calendar-anchored candidate. Full lifecycle:
-    `research/registry/MECHANISM-MEMO-H009.md` (memo, amended once at
-    pre-freeze review to add a non-adjudicating low/mid-tercile arm
-    closing a design gap between a refutation clause and what the
-    analysis actually tested) → `research/registry/H-009.md`
-    (registration + STATUS).
-  - Next candidate per the charter's cost-to-verdict priority order:
-    a killed×killed interaction (per the charter's own reasoning,
-    testing whether "marginals exhausted, interactions might not be"
-    holds outside the session family). H-001 × trend-state is
-    DISQUALIFIED (`research/CONDITIONAL_SEARCH_CHARTER.md` §4a,
-    trend_pullback resurrection risk) -- not a candidate.
+- **Batch 2 progress: 2 of 8–12 CAPPED (not quota'd) adjudications
+  complete (both killed), plus 2 documented no-candidates. 0
+  survivors.**
+  - H-008 (thin-session × high-volatility): KILLED.
+  - H-009 (month-end proximity × high-volatility): KILLED.
+  - No-candidate 1: day-of-week × volatility
+    (`research/registry/NO-CANDIDATE-daydow-x-volatility.md`) — one
+    pairing failed its own memo.
+  - No-candidate 2: killed×killed survey
+    (`research/registry/NO-CANDIDATE-killed-x-killed.md`) — the
+    **complete** zero-new-data killed×killed candidate pool outside the
+    session family (3 pairs: H-001×H-003, H-001×H-005, H-003×H-005)
+    surveyed and rejected. Stronger Branch B statement than
+    no-candidate 1: the entire cheap tier of the charter's priority
+    order is now empty, not just one pairing.
+  - **Consequence: the only remaining Batch 2 candidate tier is
+    data-onboarding-gated (cross-asset conditioning), itself gated on
+    cost model v2 + AUDUSD real specs — both already mandatory
+    prerequisites for accepting ANY hypothesis regardless of branch
+    (`RESEARCH_PROGRAM.md` §6). This is not speculative investment; it
+    is dead-weight engineering debt that must clear either way.**
+  - **Next step, agreed sequence:** cost model v2 (swap integration) →
+    AUDUSD real contract specs → survey the data-onboarding-gated
+    candidate tier with the same pre-drafting screen used for both
+    no-candidates. If that survey also returns empty, Batch 2 concludes
+    early with a defensible record (2 kills, 2 no-candidates, exhausted
+    priority ladder) and continue/conclude reopens on evidence, not
+    budget exhaustion.
 
 ## 6. Integrity record (precise claim)
 
