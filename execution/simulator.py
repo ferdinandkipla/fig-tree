@@ -29,7 +29,7 @@ from typing import Optional
 from risk.sizing import position_size
 from risk.exposure import ExposureGuard
 from risk.drawdown import max_drawdown
-from execution.costs import total_cost
+from execution.costs import total_cost, PLACEHOLDER_INSTRUMENTS
 from core.instruments import get_meta, SESSION_HOURS
 from core.config import RISK, BACKTEST, ENTRY_FEATURES
 
@@ -215,8 +215,19 @@ class Simulator:
         pnl_gross   = pnl_pips * meta["pip_value"] * t.size   # → dollars
 
         # Instrument-aware costs (already in dollars), scaled by size
-        # (cost model v2 fix -- see execution/costs.py header)
-        pnl_net      = pnl_gross - total_cost(self.symbol, t.size)
+        # (cost model v2 Commit 1 fix), plus swap (Commit 2 addition,
+        # see execution/costs.py header for the wired-as-is snapshot
+        # and its caveats). allow_placeholder=True: the simulator's job
+        # is generating research/kill-adjudication data, which is
+        # explicitly valid under placeholder costs (they only make a
+        # kill MORE likely, never manufacture a false survival) -- see
+        # docs/PROJECT_STATE.md Sec 7. Acceptance-time re-validation is
+        # a separate, later gate (RESEARCH_PROGRAM.md Sec 6), not
+        # something this simulator call can or should enforce.
+        pnl_net      = pnl_gross - total_cost(
+            self.symbol, t.size, direction=t.direction,
+            entry_dt=t.entry_dt, exit_dt=dt, allow_placeholder=True,
+        )
         self.capital += pnl_net
 
         trade_record = {
@@ -234,6 +245,7 @@ class Simulator:
             "pnl":          round(pnl_net, 2),
             "bars_held":    bars_held,
             "exit_reason":  reason,
+            "cost_model_status": "PLACEHOLDER" if self.symbol in PLACEHOLDER_INSTRUMENTS else "OK",
         }
 
         # M0 FIX 8 (cont.): generic capture, with legacy column-name
