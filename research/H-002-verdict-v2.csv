@@ -1,0 +1,4 @@
+symbol,n_pooled,min_bucket_n,tokyo_mean,london_mean,new_york_mean,observed_stat,p_value,best_session,worst_session,max_seed_dispersion,effect_smaller_than_seed_noise
+USDJPY,21712,3578,5.889,7.579,7.623,0.869,0.764,new_york,tokyo,17.881,True
+XAUUSD,23042,7568,,-88.592,-124.135,36.306,0.0,london,new_york,17.067,False
+GBPJPY,23450,7868,,12.209,6.6,3.434,0.001,london,new_york,14.128,True
