@@ -116,6 +116,15 @@ Full charter: `research/CONDITIONAL_SEARCH_CHARTER.md`, committed
 Before ANY acceptance: cost model v2 (swap integration) complete, AUDUSD
 real contract specs in place, re-canonicalized hashes (already done),
 and the full evidence standards of §2. Current status of these
-prerequisites: `PROJECT_STATE.md` §7. **As of this writing, cost model
-v2 and AUDUSD specs are NOT done — no acceptance is possible yet
-regardless of any Batch 2 result.**
+prerequisites: `PROJECT_STATE.md` §7. **Cost model v2 is now DONE and
+independently re-verified across all 7 cost-exposed items with zero
+verdict flips (`PROJECT_STATE.md` §4a). AUDUSD real specs are still NOT
+done — no acceptance is possible yet regardless of any Batch 2 result.**
+A related but distinct prerequisite, raised in priority by the
+re-verification itself: XAUUSD's swap rate is demo-account-sourced with
+unverified sign-asymmetry, and re-verification found several verdict
+internals with a closed-arithmetic dependency on that exact number
+(`research/registry/FINDING-xauusd-swap-sensitivity-h001.md`). Any
+XAUUSD-adjacent hypothesis, and the cross-asset conditioning tier
+specifically, is additionally gated on re-sourcing that rate from a
+verified, non-demo source before registration.
