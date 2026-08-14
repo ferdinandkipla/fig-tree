@@ -1,0 +1,6 @@
+symbol,best_day,worst_day,p_value,observed_stat,max_seed_dispersion,effect_exceeds_noise,min_n,n_below_30
+USDJPY,Thursday,Tuesday,0.027,2.419,10.949,False,14285,False
+XAUUSD,Thursday,Wednesday,0.0,7.389,16.143,False,13284,False
+GBPJPY,Thursday,Friday,0.003,3.177,9.685,False,14182,False
+EURUSD,Thursday,Wednesday,0.196,1.676,9.371,False,14253,False
+AUDUSD,Thursday,Monday,0.027,2.354,11.171,False,14244,False
