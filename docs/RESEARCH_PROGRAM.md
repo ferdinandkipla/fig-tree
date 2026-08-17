@@ -124,7 +124,11 @@ A related but distinct prerequisite, raised in priority by the
 re-verification itself: XAUUSD's swap rate is demo-account-sourced with
 unverified sign-asymmetry, and re-verification found several verdict
 internals with a closed-arithmetic dependency on that exact number
-(`research/registry/FINDING-xauusd-swap-sensitivity-h001.md`). Any
-XAUUSD-adjacent hypothesis, and the cross-asset conditioning tier
-specifically, is additionally gated on re-sourcing that rate from a
-verified, non-demo source before registration.
+(`research/registry/FINDING-xauusd-swap-sensitivity-h001.md`). XAUUSD-adjacent hypothesis is additionally gated on re-sourcing that
+rate from a verified, non-demo source before registration. This gate is
+scoped to hypotheses that actually touch XAUUSD, not the cross-asset
+tier as a whole — decided explicitly in `PROJECT_STATE.md` §5 after
+confirming the charter's own gating language for that tier
+(`research/CONDITIONAL_SEARCH_CHARTER.md` §4) names only the
+data-onboarding requirement. A non-XAUUSD candidate in that tier is not
+blocked by this item.

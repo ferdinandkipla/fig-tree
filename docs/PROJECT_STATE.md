@@ -169,27 +169,46 @@ effect) — not asserted, demonstrated.
     no-candidate 1: the entire cheap tier of the charter's priority
     order is now empty, not just one pairing.
   - **Consequence: the only remaining Batch 2 candidate tier is
-    cross-asset conditioning, which is doubly gated: (1) data
-    onboarding — US500 and DXY do not exist in the S1 dataset at all
-    (confirmed explicitly at this commit, correcting an earlier
-    chat-only assumption that a risk-on/off axis already existed), so
-    this requires a proper S1-grade onboarding event (sourced,
-    snapshotted, hash-pinned, caveated, per the charter) before any
-    candidate can even be drafted; and (2) as of the cost-model-v2
-    re-verification (Section 4a), the XAUUSD swap-rate re-sourcing item
-    — already a standing prerequisite via `RESEARCH_PROGRAM.md` §6 —
-    now also gates a specific, closed-arithmetic dependency this
-    re-verification surfaced, not just a general data-quality caveat.
-    This is not speculative investment; it is dead-weight engineering
+    cross-asset conditioning, which is gated on data onboarding — US500
+    and DXY do not exist in the S1 dataset at all (confirmed explicitly
+    at this commit, correcting an earlier chat-only assumption that a
+    risk-on/off axis already existed), so this requires a proper
+    S1-grade onboarding event (sourced, snapshotted, hash-pinned,
+    caveated, per the charter) before any candidate can even be
+    drafted. Charter text (`research/CONDITIONAL_SEARCH_CHARTER.md`
+    §4, item 4) states only this data-onboarding gate for the tier —
+    it does not itself mention swap re-sourcing.**
+  - **Swap-rate gating scope, decided explicitly (was previously stated
+    as an undifferentiated AND across the whole tier — that was an
+    overgeneralization on this document's part, not charter-original,
+    corrected here):** XAUUSD swap-rate re-sourcing gates any
+    hypothesis that actually touches XAUUSD — not the cross-asset tier
+    as a blanket whole. A hypothesis restricted to non-XAUUSD
+    instruments (e.g. EURUSD/AUDUSD relative value, or a US500/DXY
+    conditioning variable applied only to USDJPY/GBPJPY/EURUSD/AUDUSD)
+    has no dependency on the XAUUSD swap number and is not blocked by
+    it. **Practical consequence: US500/DXY data onboarding can proceed,
+    and non-XAUUSD cross-asset candidates can be surveyed and drafted,
+    in parallel with XAUUSD swap re-sourcing rather than serially after
+    it.** Any mechanism memo in this tier must state explicitly whether
+    it touches XAUUSD and, if so, disclose the provenance requirement
+    from `research/registry/FINDING-xauusd-swap-sensitivity-h001.md`
+    Section 5.
+  - **This is not speculative investment; it is dead-weight engineering
     debt that must clear either way.**
   - **Next step, agreed sequence:** ~~cost model v2 (swap
-    integration)~~ **DONE, re-verified (Section 4a)** → AUDUSD real
-    contract specs → XAUUSD swap-rate re-sourcing (verified,
-    non-demo source) → US500/DXY data onboarding → survey the
-    cross-asset conditioning tier with the same pre-drafting screen
-    used for both no-candidates. If that survey also returns empty,
-    Batch 2 concludes early with a defensible record (2 kills, 2
-    no-candidates, exhausted priority ladder, 0 survivors) and
+    integration)~~ **DONE, re-verified (Section 4a)** →
+    **XAUUSD swap-rate re-sourcing (sequenced ahead of AUDUSD specs —
+    three re-verification sections and a pre-registered falsifiable
+    prediction already depend on this exact fix, vs. AUDUSD's specs
+    being a generic data-quality gap with no specific finding waiting
+    on it)** and **US500/DXY data onboarding, in parallel** → AUDUSD
+    real contract specs (blocks acceptance generally, not gated by
+    either of the above) → survey the cross-asset conditioning tier
+    with the same pre-drafting screen used for both no-candidates,
+    scoped per-instrument per the decision above. If that survey also
+    returns empty, Batch 2 concludes early with a defensible record (2
+    kills, 2 no-candidates, exhausted priority ladder, 0 survivors) and
     continue/conclude reopens on evidence, not budget exhaustion.
 
 ## 6. Integrity record (precise claim)
