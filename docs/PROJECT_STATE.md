@@ -59,11 +59,22 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
 
 - 5 instruments: USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD; H4 and 1H;
   hash-pinned; MT5 provenance logged.
-- **US500 and DXY are NOT in the S1 dataset.** (Prior chat-only notes
-  incorrectly implied a risk-on/off cross-asset axis already existed in
-  S1 — it does not. Any cross-asset conditioning candidate is gated on a
-  proper S1-grade data onboarding event: sourced, snapshotted,
-  hash-pinned, caveated, per the charter.)
+- **US500 and DXY are NOT yet in the S1 dataset** (S1 itself remains
+  exactly the 5 instruments above), **but the availability question is
+  now resolved, as of 2026-08-20:**
+  - **US500: confirmed onboardable.** History from 2018-12-31
+    (`research/mt5_us500_data_check.py`), covers the full TRAIN/OOS
+    window with no truncation needed. Onboarding (sourcing, ingesting,
+    hash-pinning, caveating, per the charter's S1-grade standard) is
+    still a deliberate, separate step from this availability check —
+    not yet done.
+  - **DXY: confirmed DISQUALIFIED for this phase.** Only a dated
+    futures CFD (`DXY_U6`, Sept 2026 expiry) exists — no continuous/
+    cash instrument under any name (`research/mt5_dxy_symbol_search.py`,
+    7403 symbols checked). No futures-roll handling exists anywhere in
+    this codebase. Formal disqualification:
+    `research/CONDITIONAL_SEARCH_CHARTER.md` §4a. US500 proceeds alone
+    as the risk-on/off proxy for the cross-asset tier.
 - **Caveats, verified at this commit:**
   - AUDUSD spread is still a 1.2-pip placeholder
     (`core/instruments.py`, `spread_pips: 1.2`) — **NOT replaced with
@@ -169,27 +180,29 @@ effect) — not asserted, demonstrated.
     no-candidate 1: the entire cheap tier of the charter's priority
     order is now empty, not just one pairing.
   - **Consequence: the only remaining Batch 2 candidate tier is
-    cross-asset conditioning, which is gated on data onboarding — US500
-    and DXY do not exist in the S1 dataset at all (confirmed explicitly
-    at this commit, correcting an earlier chat-only assumption that a
-    risk-on/off axis already existed), so this requires a proper
-    S1-grade onboarding event (sourced, snapshotted, hash-pinned,
-    caveated, per the charter) before any candidate can even be
-    drafted. Charter text (`research/CONDITIONAL_SEARCH_CHARTER.md`
-    §4, item 4) states only this data-onboarding gate for the tier —
-    it does not itself mention swap re-sourcing.**
+    cross-asset conditioning. As of 2026-08-20, the data-availability
+    question is resolved (`research/mt5_us500_data_check.py`,
+    `research/mt5_dxy_symbol_search.py`): US500 confirmed onboardable
+    (history from 2018-12-31), DXY confirmed DISQUALIFIED for this
+    phase (dated futures contract only, no continuous instrument, no
+    roll-handling in this codebase — formal record:
+    `research/CONDITIONAL_SEARCH_CHARTER.md` §4a). US500 proceeds alone
+    as the risk-on/off proxy. The actual onboarding event (sourcing,
+    ingesting, hash-pinning, caveating US500 into `data/storage/` per
+    the charter's S1-grade standard) is still a separate, not-yet-done
+    step from this availability confirmation.**
   - **Swap-rate gating scope, decided explicitly (was previously stated
     as an undifferentiated AND across the whole tier — that was an
     overgeneralization on this document's part, not charter-original,
     corrected here):** XAUUSD swap-rate re-sourcing gates any
     hypothesis that actually touches XAUUSD — not the cross-asset tier
     as a blanket whole. A hypothesis restricted to non-XAUUSD
-    instruments (e.g. EURUSD/AUDUSD relative value, or a US500/DXY
+    instruments (e.g. EURUSD/AUDUSD relative value, or a US500
     conditioning variable applied only to USDJPY/GBPJPY/EURUSD/AUDUSD)
     has no dependency on the XAUUSD swap number and is not blocked by
-    it. **Practical consequence: US500/DXY data onboarding can proceed,
-    and non-XAUUSD cross-asset candidates can be surveyed and drafted,
-    in parallel with XAUUSD swap re-sourcing rather than serially after
+    it. **Practical consequence: US500 onboarding can proceed, and
+    non-XAUUSD cross-asset candidates can be surveyed and drafted, in
+    parallel with XAUUSD swap re-sourcing rather than serially after
     it.** Any mechanism memo in this tier must state explicitly whether
     it touches XAUUSD and, if so, disclose the provenance requirement
     from `research/registry/FINDING-xauusd-swap-sensitivity-h001.md`
@@ -202,7 +215,7 @@ effect) — not asserted, demonstrated.
     three re-verification sections and a pre-registered falsifiable
     prediction already depend on this exact fix, vs. AUDUSD's specs
     being a generic data-quality gap with no specific finding waiting
-    on it)** and **US500/DXY data onboarding, in parallel** → AUDUSD
+    on it)** and **US500 data onboarding, in parallel** → AUDUSD
     real contract specs (blocks acceptance generally, not gated by
     either of the above) → survey the cross-asset conditioning tier
     with the same pre-drafting screen used for both no-candidates,
@@ -229,7 +242,8 @@ verification layer works; report it, never hide it.
 | Re-canonicalize trade-CSV hashes (direction column) | DONE (`25db12b`) |
 | Migration verifier script | DONE (`research/verify_schema_migration.py`) |
 | Cost model v2 (swap integration) | DONE (`e0d3637`/`4feb84c`), re-verified across 7 items (`a42a7aa`, Section 4a) |
-| XAUUSD swap-rate re-sourcing (verified, non-demo source) | **NOT DONE** — priority raised by cost-model-v2 re-verification (Section 4a); gates cross-asset conditioning tier |
+| XAUUSD swap-rate re-sourcing (verified, non-demo source) | **NOT DONE** — priority raised by cost-model-v2 re-verification (Section 4a); gates any XAUUSD-touching hypothesis, not the cross-asset tier as a whole (see scoping decision, Section 5) |
+| US500/DXY data-availability check | **DONE (2026-08-20)** — US500 confirmed onboardable (history from 2018-12-31); DXY confirmed disqualified for this phase (dated futures contract only, no roll-handling in this codebase; formal record `research/CONDITIONAL_SEARCH_CHARTER.md` §4a). Actual US500 onboarding (ingest + hash-pin into `data/storage/`) is a separate, still-NOT-DONE step. |
 | AUDUSD real contract specs (replace 1.2-pip placeholder) | **NOT DONE** |
 | Interaction-capable per-cell analysis harness | DONE, built and validated (`2875bb8`, bug-fixed `f5c9cc3`) |
 | `tests/test_determinism.py` mutates committed `research/` CSVs in place as a side effect | **NOT DONE** — surfaced during cost model v2 (`docs/COST_MODEL_V2_PLAN.md`). A routine `pytest` invocation regenerates `research/trades_*.csv`/`regime_*.csv`/`yearly_*.csv` in the working tree via `main.py`, producing an unexplained dirty tree after any ordinary test run — possibly the same root cause as the ledger-freeze dirty-tree warnings already tolerated elsewhere (`research/run_h008.py`/`run_h009.py`'s manifest-freeze WARNING). Fix: the determinism test should regenerate into a temp directory and compare there, not overwrite `research/` in place. This same behavior is what produced the cascade-compounded vs. cascade-immune comparison trap caught during H-001 re-verification (`research/registry/FINDING-xauusd-swap-sensitivity-h001.md` Section 1) — still logged, not fixed. |
@@ -242,15 +256,18 @@ flips across all 7 exposed items. **No Batch 2 hypothesis may be
 ACCEPTED until AUDUSD real specs are in place** (cost model v2 itself is
 now done); the XAUUSD swap-rate re-sourcing item is a second, related
 but distinct prerequisite specifically for any XAUUSD-adjacent
-hypothesis or the cross-asset conditioning tier. Every Batch 2
+hypothesis (not the cross-asset tier as a whole — US500-only
+candidates are unaffected by it). Every Batch 2
 registration must state the applicable caveat explicitly.
 
 ## 8. The decision on the table (as of this update)
 
 None outstanding at the phase or hypothesis-design level. The
-interaction-capable harness and cost model v2 (Sections 2, 4a) are both
-done, closing the two items that previously blocked this section.
-**The single remaining blocker before Batch 2 can accept anything or
-open the cross-asset conditioning tier is engineering/data-sourcing,
-not a decision:** AUDUSD real contract specs, XAUUSD swap-rate
-re-sourcing, and US500/DXY data onboarding (Section 5, 7).
+interaction-capable harness, cost model v2 (Sections 2, 4a), and the
+US500/DXY data-availability question (Section 3, 5, 7 — US500
+onboardable, DXY disqualified) are all resolved, closing the items that
+previously blocked this section. **The single remaining blocker before
+Batch 2 can accept anything, or before a non-XAUUSD cross-asset
+candidate can be drafted, is engineering/data-sourcing, not a
+decision:** AUDUSD real contract specs, XAUUSD swap-rate re-sourcing,
+and the actual US500 onboarding event (ingest + hash-pin, Section 5, 7).

@@ -117,22 +117,24 @@ no longer a differentiator** (see Section 6 on the bottleneck shift).
    data source requiring its own hash-pinned ingestion, not something
    already in `data/storage/`.
 4. **Cross-asset conditioning** (risk-on/off axis via an index or DXY
-   proxy). **FLAGGED EXPLICITLY: this is NOT already in the S1
-   dataset.** The actual data ingested in S1 is exactly five
-   instruments — USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD. No index CFD
-   was ever pulled (floated as optional during S1 scoping, never
-   followed through), and DXY is not a standard MT5 symbol — it would
-   require a proxy instrument or an entirely different data source.
-   This candidate is GATED on a new, S1-grade data-onboarding event
-   (sourcing, ingesting, hash-pinning, cost-caveating) before any
-   mechanism memo referencing it can be committed. Do not schedule this
-   as if the data already exists.
+   proxy). **UPDATE 2026-08-20: US500 confirmed onboardable (history
+   from 2018-12-31, no truncation needed vs. the existing TRAIN window);
+   DXY confirmed disqualified for this phase — see Sec 4a.** The
+   original S1 dataset remains exactly five instruments — USDJPY,
+   XAUUSD, GBPJPY, EURUSD, AUDUSD — no index CFD was pulled during S1
+   scoping. US500 onboarding (sourcing, ingesting, hash-pinning,
+   cost-caveating, per this charter's own standard) is still a
+   deliberate, separate step from this survey/availability check — do
+   not schedule mechanism-memo drafting as if the data is already
+   ingested into `data/storage/`, only as if it's now known to be
+   available and fetchable.
 
 ## 4a. Disqualified candidates (committed here so a future session does not independently rediscover and draft these)
 
 | Candidate | Status | Reason |
 |---|---|---|
 | Pullback depth (H-001) × trend state | **DISQUALIFIED, not merely deprioritized** | Trend-pullback resurrection risk, per `LESSONS_LEARNED.md` Sec 3.1/`AI_ONBOARDING.md` Sec 3: "pullback entries work conditional on trend strength" is uncomfortably close to re-deriving the retired `trend_pullback` strategy's own ADX-ceiling logic with an interaction label on it. Disqualified on appearance-plus-kinship grounds before any mechanism-memo drafting was attempted, not after a memo failed the bar. |
+| DXY as a cross-asset conditioning variable | **DISQUALIFIED for this phase, data-availability grounds** | Confirmed via broker symbol search (`research/mt5_dxy_symbol_search.py`, run 2026-08-20): only a dated futures CFD (`DXY_U6`, September 2026 expiry) exists in the account — no continuous/cash instrument under any searched name (`DXY`, `USDX`, `DOLLAR` substring, 7403 total symbols checked). A single dated contract cannot span the 2019 TRAIN window start, and the codebase has no futures-roll handling (back-adjustment, gap treatment) to construct a synthetic continuous series — the existing 5 instruments are all spot FX/metals with no roll logic anywhere. Re-opening requires either a different data source or a dedicated roll-handling engineering effort, out of scope for the current cross-asset conditioning survey. **US500 proceeds alone** as the risk-on/off proxy for this tier — confirmed via the same script family (`research/mt5_us500_data_check.py`) to have usable history from 2018-12-31, covering the full TRAIN/OOS window with no truncation needed. |
 
 ## 5. Statistical safeguards, extended for the conditional family
 
