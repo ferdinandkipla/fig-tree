@@ -7,41 +7,46 @@
 # during cost-model-v2 scoping, documented in
 # docs/COST_MODEL_V2_PLAN.md Sec 1 and research/COST_MODEL_ERRATA.md.
 # ADD (cost model v2, Commit 2/2): swap cost, wired from
-# research/S1_SWAP_RATES_SNAPSHOT.md AS-IS. That snapshot's caveats
-# apply to every number this module returns for the swap term:
-#   1. TODAY-SNAPSHOT, not historical -- applying 2026-07-24's rates
-#      uniformly across a 2019-2025 backtest window is an approximation.
-#   2. DEMO-ACCOUNT sourced (ICMarketsSC-Demo) -- may differ from live
-#      account terms.
-#   3. Sign convention: positive credited, negative charged. XAUUSD's
-#      long/short asymmetry is large and UNVERIFIED against IC Markets'
-#      published contract specs.
-# Re-sourcing is explicitly OUT of scope for this module -- see
-# docs/COST_MODEL_V2_PLAN.md Sec 0.1. ANY hypothesis whose acceptance
-# depends on swap-sensitive cost stress must re-validate against a live
-# source first, per RESEARCH_PROGRAM.md Sec 6's acceptance gate.
+# research/S1_SWAP_RATES_SNAPSHOT_V2.md (supersedes the 2026-07-24
+# snapshot, refreshed 2026-08-20).
 #
-# AUDUSD hard-block: no real contract spec has been sourced for AUDUSD
-# (spread_pips is still a 1.2-pip PLACEHOLDER in core/instruments.py,
-# and no swap rate exists for it beyond the demo snapshot's own
-# placeholder-quality numbers). total_cost() raises for AUDUSD unless
-# the caller explicitly passes allow_placeholder=True -- kills remain
-# computable (placeholder costs only make a kill MORE likely, never
-# manufacture a false survival), but silent trust is refused.
+# DECISION (2026-08-20, research/S1_SWAP_RATES_SNAPSHOT_V2.md "Decision"
+# section): these rates are now the PERMANENT accepted baseline, not a
+# placeholder pending re-sourcing. IC Markets does not publish a static
+# swap-rate table for this broker -- their own material states swap
+# rates as "Variable, check your platform" -- so "re-source from a
+# verified, non-demo source" is not achievable via public sourcing and
+# has been replaced with: demo-sourced + periodically refreshed +
+# cross-checked for plausibility against an independent broker's
+# published numbers (see the snapshot doc for specifics). The
+# demo-vs-live distinction remains genuinely open; if live-account
+# access ever becomes available, that comparison would supersede this.
+#
+# AUDUSD hard-block: spread_pips is still a 1.2-pip PLACEHOLDER in
+# core/instruments.py (IC Markets' spec sheet confirms spreads are
+# "Variable" broker-wide -- no fixed number exists to source instead;
+# this needs a live-sampled average from MT5, not a published lookup).
+# total_cost() raises for AUDUSD unless the caller explicitly passes
+# allow_placeholder=True -- kills remain computable (placeholder costs
+# only make a kill MORE likely, never manufacture a false survival),
+# but silent trust is refused. AUDUSD's swap rate itself is no longer
+# the blocking issue (accepted under the same decision as the other 4
+# instruments) -- only the spread placeholder keeps the hard block active.
 
 from core.instruments import get_meta
 from execution.rollover import count_rollover_nights
 
 PLACEHOLDER_INSTRUMENTS = {"AUDUSD"}
 
-# Per-standard-lot swap rates, broker's native units, wired as-is from
-# research/S1_SWAP_RATES_SNAPSHOT.md (pulled 2026-07-24, ICMarketsSC-Demo).
+# Per-standard-lot swap rates, broker's native units. Refreshed
+# 2026-08-20 (see research/S1_SWAP_RATES_SNAPSHOT_V2.md for the prior
+# 2026-07-24 values, drift observed, and the permanent-baseline decision).
 SWAP_RATES = {
-    "USDJPY": {"long": 8.752, "short": -17.618},
-    "XAUUSD": {"long": -53.763, "short": 36.931},
-    "GBPJPY": {"long": 12.143, "short": -23.758},
-    "EURUSD": {"long": -8.166, "short": 1.454},
-    "AUDUSD": {"long": -2.231, "short": -4.739},  # placeholder-quality, see PLACEHOLDER_INSTRUMENTS
+    "USDJPY": {"long": 8.131, "short": -16.888},
+    "XAUUSD": {"long": -57.294, "short": 39.452},
+    "GBPJPY": {"long": 11.399, "short": -22.900},
+    "EURUSD": {"long": -8.276, "short": 1.533},
+    "AUDUSD": {"long": -2.546, "short": -4.442},  # swap accepted; spread still placeholder, see PLACEHOLDER_INSTRUMENTS
 }
 
 

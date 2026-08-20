@@ -114,6 +114,20 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
 
 ## 4a. Cost model v2 re-verification (closed, `a42a7aa`)
 
+**Staleness flag, added 2026-08-20:** everything below was verified
+against `SWAP_RATES` as pinned in the 2026-07-24 snapshot
+(`research/S1_SWAP_RATES_SNAPSHOT.md`). That snapshot has since been
+superseded — `research/S1_SWAP_RATES_SNAPSHOT_V2.md`, `execution/costs.py`
+`SWAP_RATES` now hold 2026-08-20 values, formalized as the permanent
+baseline (see that doc's "Decision" section for why). **This
+re-verification has NOT been re-run against the new values.** The drift
+observed (a few percent per instrument, XAUUSD's asymmetry became
+slightly *more* pronounced, not less) makes a verdict flip unlikely
+given how much margin H-003/H-004/H-006's near-misses had — but
+"unlikely" is not "confirmed," and this file's own rule is to say so
+rather than imply coverage that wasn't actually re-run. Logged as an
+open item, not resolved here.
+
 Full decision record: `research/registry/FINDING-xauusd-swap-sensitivity-h001.md`.
 
 All 7 cost-exposed items reran clean against corrected costs (patch-only,
@@ -242,7 +256,7 @@ verification layer works; report it, never hide it.
 | Re-canonicalize trade-CSV hashes (direction column) | DONE (`25db12b`) |
 | Migration verifier script | DONE (`research/verify_schema_migration.py`) |
 | Cost model v2 (swap integration) | DONE (`e0d3637`/`4feb84c`), re-verified across 7 items (`a42a7aa`, Section 4a) |
-| XAUUSD swap-rate re-sourcing (verified, non-demo source) | **NOT DONE** — priority raised by cost-model-v2 re-verification (Section 4a); gates any XAUUSD-touching hypothesis, not the cross-asset tier as a whole (see scoping decision, Section 5) |
+| XAUUSD swap-rate re-sourcing (verified, non-demo source) | **RESOLVED AS: not achievable, reframed (2026-08-20).** IC Markets publishes no static swap table for this broker (confirmed via direct check of their own material — swap rates are stated as "Variable, check platform"). Decision: demo-sourced rates accepted as the permanent baseline, refreshed periodically, cross-checked for plausibility (not exact-value verification) against an independent broker's published numbers. Full record: `research/S1_SWAP_RATES_SNAPSHOT_V2.md`. **New follow-on debt created by this refresh: cost-model-v2 re-verification (Section 4a) was run against the now-superseded 7/24 values and has not been re-run against the 8/20 values.** |
 | US500/DXY data-availability check | **DONE (2026-08-20)** — US500 confirmed onboardable (history from 2018-12-31); DXY confirmed disqualified for this phase (dated futures contract only, no roll-handling in this codebase; formal record `research/CONDITIONAL_SEARCH_CHARTER.md` §4a). |
 | US500 real data ingestion (H4/1H into `data/storage/`) | **DONE (2026-08-20)** — `data/storage/US500_16388.csv` (9879 rows, 2019-01-02→2025-05-30), `data/storage/US500_16385.csv` (37862 rows, 2018-12-31→2025-05-30). Provenance: `research/S1_US500_ONBOARDING_SNAPSHOT.md`. **Hash-pinning caveat, discovered this commit:** the onboarding script's run-time SHA-256 did not match the git-stored file's hash — Windows `core.autocrlf` silently normalized line endings between the script's write and the commit. Corrected in the snapshot doc, `.gitattributes` added (`eol=lf` on csv/py/md) to prevent recurrence. **Not yet independently checked: whether the original 5 instruments' `data/storage/*.csv` (same `data.loader.fetch()` code path, committed pre-dating this discovery) have the same undetected divergence between their originally-claimed and actually-git-stored hashes.** Flagged, not resolved. |
 | AUDUSD real contract specs (replace 1.2-pip placeholder) | **NOT DONE** |
