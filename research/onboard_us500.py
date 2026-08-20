@@ -47,6 +47,8 @@ import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 try:
     import MetaTrader5 as mt5
 except ImportError:
