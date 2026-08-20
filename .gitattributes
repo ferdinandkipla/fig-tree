@@ -1,0 +1,12 @@
+# Force LF line endings for all data/CSV files regardless of OS or local
+# git config (core.autocrlf). Without this, a script's pre-commit SHA-256
+# (computed on the file as written to disk, before git ever touches it)
+# can silently diverge from the hash of what git actually stores and
+# hands back on any future clone/pull -- discovered 2026-08-20 during
+# US500 onboarding verification (research/S1_US500_ONBOARDING_SNAPSHOT.md),
+# where the script-reported hash and the git-stored hash did not match.
+# This does not retroactively fix any already-committed file's hash
+# claims; it only prevents new divergence going forward.
+*.csv text eol=lf
+*.py text eol=lf
+*.md text eol=lf
