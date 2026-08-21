@@ -114,19 +114,25 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
 
 ## 4a. Cost model v2 re-verification (closed, `a42a7aa`)
 
-**Staleness flag, added 2026-08-20:** everything below was verified
-against `SWAP_RATES` as pinned in the 2026-07-24 snapshot
-(`research/S1_SWAP_RATES_SNAPSHOT.md`). That snapshot has since been
-superseded — `research/S1_SWAP_RATES_SNAPSHOT_V2.md`, `execution/costs.py`
-`SWAP_RATES` now hold 2026-08-20 values, formalized as the permanent
-baseline (see that doc's "Decision" section for why). **This
-re-verification has NOT been re-run against the new values.** The drift
-observed (a few percent per instrument, XAUUSD's asymmetry became
-slightly *more* pronounced, not less) makes a verdict flip unlikely
-given how much margin H-003/H-004/H-006's near-misses had — but
-"unlikely" is not "confirmed," and this file's own rule is to say so
-rather than imply coverage that wasn't actually re-run. Logged as an
-open item, not resolved here.
+**Staleness flag, added 2026-08-20, now compounded:** everything below
+was verified against `SWAP_RATES` as pinned in the 2026-07-24 snapshot,
+**and against a cost model with zero commission modeling and AUDUSD
+hard-blocked entirely.** Both have since changed materially:
+`SWAP_RATES` refreshed to 2026-08-20 values (formalized as permanent,
+`research/S1_SWAP_RATES_SNAPSHOT_V2.md`), and **a commission term was
+added for the first time** ($7/lot round-turn, the 4 FX majors) —
+this is not a magnitude refresh of an existing term the way the swap
+update was, it's a wholly new cost component this re-verification never
+saw at all. **This re-verification has NOT been re-run against either
+change.** The swap drift alone was modest and unlikely to flip anything
+given the margin H-003/H-004/H-006's near-misses had; the commission
+addition is a different kind of change (new fixed-per-trade cost,
+independent of holding period or instrument-specific swap asymmetry)
+and its effect on any of the 7 verdicts has not been reasoned through
+at all, let alone tested. This section's "zero verdict flips" claim
+should be read as **"zero verdict flips as of the cost model tested
+against the 7/24 snapshot with no commission"** — not as current
+coverage.
 
 Full decision record: `research/registry/FINDING-xauusd-swap-sensitivity-h001.md`.
 
@@ -259,7 +265,10 @@ verification layer works; report it, never hide it.
 | XAUUSD swap-rate re-sourcing (verified, non-demo source) | **RESOLVED AS: not achievable, reframed (2026-08-20).** IC Markets publishes no static swap table for this broker (confirmed via direct check of their own material — swap rates are stated as "Variable, check platform"). Decision: demo-sourced rates accepted as the permanent baseline, refreshed periodically, cross-checked for plausibility (not exact-value verification) against an independent broker's published numbers. Full record: `research/S1_SWAP_RATES_SNAPSHOT_V2.md`. **New follow-on debt created by this refresh: cost-model-v2 re-verification (Section 4a) was run against the now-superseded 7/24 values and has not been re-run against the 8/20 values.** |
 | US500/DXY data-availability check | **DONE (2026-08-20)** — US500 confirmed onboardable (history from 2018-12-31); DXY confirmed disqualified for this phase (dated futures contract only, no roll-handling in this codebase; formal record `research/CONDITIONAL_SEARCH_CHARTER.md` §4a). |
 | US500 real data ingestion (H4/1H into `data/storage/`) | **DONE (2026-08-20)** — `data/storage/US500_16388.csv` (9879 rows, 2019-01-02→2025-05-30), `data/storage/US500_16385.csv` (37862 rows, 2018-12-31→2025-05-30). Provenance: `research/S1_US500_ONBOARDING_SNAPSHOT.md`. **Hash-pinning caveat, discovered this commit:** the onboarding script's run-time SHA-256 did not match the git-stored file's hash — Windows `core.autocrlf` silently normalized line endings between the script's write and the commit. Corrected in the snapshot doc, `.gitattributes` added (`eol=lf` on csv/py/md) to prevent recurrence. **Not yet independently checked: whether the original 5 instruments' `data/storage/*.csv` (same `data.loader.fetch()` code path, committed pre-dating this discovery) have the same undetected divergence between their originally-claimed and actually-git-stored hashes.** Flagged, not resolved. |
-| AUDUSD real contract specs (replace 1.2-pip placeholder) | **NOT DONE** |
+| AUDUSD real contract specs (replace 1.2-pip placeholder) | **RESOLVED (2026-08-20).** Spread live-sampled (`research/sample_audusd_spread.py`, mean 0.075 pips, single ~2-min session — see script output for time-of-day caveat). Swap accepted under the permanent-baseline decision (`research/S1_SWAP_RATES_SNAPSHOT_V2.md`). **Commission added for the first time** — the cost model had zero commission modeling until this commit, despite the account being confirmed "Raw Spread" (IC Markets account dashboard, not inferred) where broker compensation is commission-based, not spread-markup-based. `$7.00/lot round-turn` (IC Markets' published Forex spec sheet, this account's USD currency), applied to the 4 FX majors only (`COMMISSION_APPLIES_TO` in `execution/costs.py`) — deliberately NOT applied to XAUUSD, whose metals commission is a separate, unsourced number. `PLACEHOLDER_INSTRUMENTS` is now empty. |
+| USDJPY/GBPJPY/EURUSD spread_pips — never independently sourced from this account | **NEW, NOT DONE.** Surfaced by the AUDUSD fix: the old 1.2-pip AUDUSD placeholder was ~16x the actual live-sampled Raw-account spread (0.075 pips). The other 3 FX majors' `spread_pips` (1.5/2.5/1.0) read like the same category of generic, unverified estimate AUDUSD's placeholder turned out to be — never labeled as such, never checked against this account. Not assumed wrong; not assumed right either. Needs the same `sample_audusd_spread.py`-style live sampling, per instrument. |
+| XAUUSD metals commission | **NEW, NOT DONE.** IC Markets' commission table sourced this session was Forex-specific; their own material notes metals commission "varies by account type" without giving the number. XAUUSD's `total_cost()` currently has $0 commission — not verified as correct, just not yet contradicted either. |
+| `spread_cost`/`slip_cost` formula in `execution/costs.py` — possible unit/double-conversion issue | **NEW, NOT DONE, NOT FIXED.** Discovered while sanity-checking the AUDUSD commission fix: `spread_pips * pip_size * pip_value * size` produces a spread cost of ~$0.000075 for a 1-lot AUDUSD trade regardless of the spread_pips value used — `pip_size` appears to be applied twice (once inside the already-dollar-denominated `pip_value`, once again explicitly), making the spread/slip terms negligible under any spread number. This is pre-existing code, unchanged by any commit this session, and has been load-bearing under every hypothesis adjudicated to date (Batch 1 and 2 both) — **not touched or fixed here**, deliberately, because a change of that scope needs dedicated review, not a same-session patch stacked on everything else. Consequence, stated plainly: **commission is now the dominant FX transaction-cost term by orders of magnitude** ($7/lot vs. ~$0.0001 from spread/slip as currently formulated) — true regardless of whether this formula turns out to need fixing. |
 | Interaction-capable per-cell analysis harness | DONE, built and validated (`2875bb8`, bug-fixed `f5c9cc3`) |
 | `tests/test_determinism.py` mutates committed `research/` CSVs in place as a side effect | **NOT DONE** — surfaced during cost model v2 (`docs/COST_MODEL_V2_PLAN.md`). A routine `pytest` invocation regenerates `research/trades_*.csv`/`regime_*.csv`/`yearly_*.csv` in the working tree via `main.py`, producing an unexplained dirty tree after any ordinary test run — possibly the same root cause as the ledger-freeze dirty-tree warnings already tolerated elsewhere (`research/run_h008.py`/`run_h009.py`'s manifest-freeze WARNING). Fix: the determinism test should regenerate into a temp directory and compare there, not overwrite `research/` in place. This same behavior is what produced the cascade-compounded vs. cascade-immune comparison trap caught during H-001 re-verification (`research/registry/FINDING-xauusd-swap-sensitivity-h001.md` Section 1) — still logged, not fixed. |
 

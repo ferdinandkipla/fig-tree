@@ -22,21 +22,37 @@
 # demo-vs-live distinction remains genuinely open; if live-account
 # access ever becomes available, that comparison would supersede this.
 #
-# AUDUSD hard-block: spread_pips is still a 1.2-pip PLACEHOLDER in
-# core/instruments.py (IC Markets' spec sheet confirms spreads are
-# "Variable" broker-wide -- no fixed number exists to source instead;
-# this needs a live-sampled average from MT5, not a published lookup).
-# total_cost() raises for AUDUSD unless the caller explicitly passes
-# allow_placeholder=True -- kills remain computable (placeholder costs
-# only make a kill MORE likely, never manufacture a false survival),
-# but silent trust is refused. AUDUSD's swap rate itself is no longer
-# the blocking issue (accepted under the same decision as the other 4
-# instruments) -- only the spread placeholder keeps the hard block active.
+# AUDUSD hard-block: RESOLVED 2026-08-20, see the ADD COMMISSION block
+# below for the full story (spread live-sampled, commission sourced,
+# swap accepted). PLACEHOLDER_INSTRUMENTS is now empty. That fix
+# surfaced a larger, NOT-yet-resolved question about whether
+# USDJPY/GBPJPY/EURUSD's spread_pips were ever sourced from this
+# account either -- see the "OPEN QUESTION" comment below
+# COMMISSION_PER_LOT_USD.
 
 from core.instruments import get_meta
 from execution.rollover import count_rollover_nights
 
-PLACEHOLDER_INSTRUMENTS = {"AUDUSD"}
+# AUDUSD RESOLVED (2026-08-20): spread live-sampled
+# (research/sample_audusd_spread.py, 0.075 pips mean), swap accepted
+# under the permanent-baseline decision (S1_SWAP_RATES_SNAPSHOT_V2.md),
+# commission sourced (see COMMISSION_PER_LOT_USD above). All three cost
+# components are now sourced to the same standard as the other 4 FX
+# majors -- hard block lifted, AUDUSD removed from
+# PLACEHOLDER_INSTRUMENTS.
+#
+# OPEN QUESTION SURFACED BY THIS FIX, NOT RESOLVED HERE: AUDUSD's old
+# 1.2-pip placeholder was ~16x the actual live-sampled Raw-account
+# spread (0.075 pips). USDJPY/GBPJPY/EURUSD's spread_pips (1.5/2.5/1.0)
+# were never independently sourced from this account either -- they
+# read like generic standard-account-style estimates, the same category
+# of unverified number AUDUSD's placeholder turned out to be. If they
+# have the same problem, the missing-commission fix above and an
+# overstated-spread problem could be partially offsetting for those 3
+# pairs, or could not be, instrument by instrument -- not assumed
+# either way. XAUUSD's commission is also still unsourced (Forex-only
+# spec sheet doesn't cover metals). Flagged as a new, larger debt item.
+PLACEHOLDER_INSTRUMENTS = set()
 
 # Per-standard-lot swap rates, broker's native units. Refreshed
 # 2026-08-20 (see research/S1_SWAP_RATES_SNAPSHOT_V2.md for the prior
@@ -68,6 +84,45 @@ def swap_cost(symbol: str, size: float, direction: int, entry_dt, exit_dt) -> fl
     return -rate * size * nights  # flip sign: snapshot's credit(+)/charge(-) -> cost(+)/credit(-)
 
 
+# COMMISSION (added 2026-08-20): confirmed missing entirely from this
+# module until now -- account 52974506 is explicitly a "Raw Spread"
+# account (confirmed via IC Markets' own account dashboard, not
+# inferred), meaning broker compensation comes through a separate
+# per-lot commission, not spread markup. A live-sampled AUDUSD spread
+# check this session came back at ~0.075 pips mean (vs. the 1.2-pip
+# placeholder) -- correct for a raw account, but using it alone would
+# have badly under-costed every trade by omitting commission entirely.
+#
+# Source: IC Markets' Forex Product Specification Sheet
+# (cdn.icmarkets.com/uploads/FSA/Forex-Product-Specificiation-Sheet.pdf),
+# "Commission (RawSpread): $7USD, $7AUD, 5GBP, 5.50EUR, 9SGD, 650JPY,
+# 6.60CHF, 9NZD, 7CAD, 54.25HKD per lot round turn" -- a flat per-lot
+# fee keyed by ACCOUNT currency, not by instrument traded. This
+# account's currency is USD, so $7.00/lot round-turn applies uniformly
+# across all FX pairs on this account.
+#
+# SCOPE, DELIBERATELY LIMITED: applied to the 4 FX majors only
+# (USDJPY, GBPJPY, EURUSD, AUDUSD). NOT applied to XAUUSD -- that spec
+# sheet was Forex-specific; metals commission may differ and has not
+# been sourced (IC Markets' own material notes "commissions in Forex
+# and Precious Metals... rates vary by account type" without giving
+# the metals number). Applying the FX rate to XAUUSD without evidence
+# would repeat exactly the mistake this fix is correcting. Flagged as
+# a distinct open item, not assumed equal to FX's rate.
+COMMISSION_PER_LOT_USD = 7.00
+COMMISSION_APPLIES_TO = {"USDJPY", "GBPJPY", "EURUSD", "AUDUSD"}
+
+
+def commission_cost(symbol: str, size: float) -> float:
+    """Round-turn commission in dollars for one trade, this account's
+    currency (USD) only. Returns 0.0 for instruments not in
+    COMMISSION_APPLIES_TO (currently: XAUUSD, pending metals-specific
+    sourcing -- see module header)."""
+    if symbol not in COMMISSION_APPLIES_TO:
+        return 0.0
+    return COMMISSION_PER_LOT_USD * size
+
+
 def total_cost(symbol: str, size: float, direction: int = 1, entry_dt=None,
                 exit_dt=None, slippage_pips: float = 1.0,
                 allow_placeholder: bool = False) -> float:
@@ -82,7 +137,8 @@ def total_cost(symbol: str, size: float, direction: int = 1, entry_dt=None,
     meta        = get_meta(symbol)
     spread_cost = meta["spread_pips"]  * meta["pip_size"] * meta["pip_value"] * size
     slip_cost   = slippage_pips        * meta["pip_size"] * meta["pip_value"] * size
+    commission  = commission_cost(symbol, size)
     swap        = 0.0
     if entry_dt is not None and exit_dt is not None:
         swap = swap_cost(symbol, size, direction, entry_dt, exit_dt)
-    return spread_cost + slip_cost + swap
+    return spread_cost + slip_cost + commission + swap

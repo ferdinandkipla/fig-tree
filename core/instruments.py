@@ -27,7 +27,12 @@ INSTRUMENT_META = {
     "AUDUSD": {
         "pip_size":    0.0001,
         "pip_value":   10.00,
-        "spread_pips": 1.2,
+        "spread_pips": 0.075,  # live-sampled 2026-08-20, ICMarketsSC-Demo
+                                # Raw Spread account, 24 samples/~2min,
+                                # mean 0.075 (range 0.00-0.10). Small
+                                # single-session sample -- see
+                                # research/sample_audusd_spread.py's
+                                # output notes on time-of-day caveats.
         "sessions":    ["tokyo", "london", "new_york"],
     },
 }
