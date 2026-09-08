@@ -79,9 +79,29 @@ actually tested.
 
 ## 5. What this does NOT do
 
-- Does not touch `execution/simulator.py`, `risk/sizing.py`, or any
-  other consumer of `pip_value` — those were already correct (this
-  fix's own hand-derivation confirms it by cross-referencing them).
+- **Checked, not assumed:** `pip_value` grepped across `execution/`,
+  `core/`, `risk/`, `research/` before writing this fix, specifically
+  to rule out the same defect in `pnl_gross`/`position_size()`. Both
+  are clean:
+  - `execution/simulator.py:214-215`: `pnl_pips = price_delta /
+    meta["pip_size"]` (a raw price delta DIVIDED by pip_size to
+    produce a genuine pip count) then `pnl_gross = pnl_pips *
+    meta["pip_value"] * t.size` — exactly one pip-to-dollar
+    conversion, correct.
+  - `risk/sizing.py:8,11`: `stop_pips = abs(entry - stop) /
+    meta["pip_size"]` (same pattern) then `risk_per_lot = stop_pips *
+    meta["pip_value"]` — correct.
+  - The distinguishing fact: `pnl_pips`/`stop_pips` are DERIVED from a
+    raw price delta (dividing by `pip_size` is the correct, necessary
+    step that converts price units into a pip count). `spread_pips`/
+    `slippage_pips` are GIVEN DIRECTLY as pip-unit constants
+    (`core/instruments.py`'s `1.5`, `2.5`, `1.0`, `0.075`, ...) — never
+    a raw price needing conversion. Multiplying an already-pip-unit
+    number by `pip_size` again was the defect; it was never present in
+    the two derived-pip-count consumers. No cascading position-sizing
+    inflation, no further hunting required.
+- Does not touch any other consumer of `pip_value` — both confirmed
+  clean above.
 - Does not re-run the Batch 1/2 re-verification. That is the next,
   separate step (`docs/PROJECT_STATE.md` §4a), combining this fix with
   the still-unapplied 08-20 swap values and commission term in one
