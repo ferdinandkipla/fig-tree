@@ -112,3 +112,44 @@ actually tested.
   same category AUDUSD's placeholder turned out to be).
 - Does not source XAUUSD's metals commission (still $0, not verified
   correct, not yet contradicted either).
+
+## 6. Pre-registered spread-sampling aggregation rule (decided before sampling data exists)
+
+Per review before `research/sample_fx_spreads.py`'s `--summary` is ever
+run against real accumulated data:
+
+- **Naive overall mean across accumulated samples is explicitly
+  rejected.** Six ~2-minute runs across different sessions give six
+  tight clusters, not a distribution — an unweighted mean would be
+  biased by how many times the sampler happened to be run in each
+  session, an artifact of operator behavior, not market structure.
+- **The weight is the historical distribution of actual simulator
+  entry hours**, not an assumption about which sessions "should"
+  matter. Checked directly, not assumed: `execution/simulator.py`'s
+  `_in_valid_session()` is hardcoded `return True` — session gating is
+  **disabled** in research mode (comment: "reintroduce in Phase 3").
+  Entries fire in every hour for every instrument. The correct
+  aggregation is therefore weighting each session's sampled mean by
+  the real historical entry-hour distribution, computed from the
+  pooled 100-seed `research/null_runs_h004/` sweep (large N,
+  already-generated) — not a "London/NY only" assumption, which the
+  data does not support here.
+- **Rollover window (21:00–22:00 UTC) is sampled and reported, but
+  excluded from the weighted aggregate.** IC Markets spreads are
+  reported to widen sharply in this window; including it would let one
+  sample silently dominate whichever session tag it would otherwise
+  fall under. Reported separately because
+  `execution/rollover.py`'s `count_rollover_nights` implies positions
+  are genuinely held through this window — worth recording for the
+  finding doc even though the cost model has no time-of-day-varying
+  spread to apply it to.
+- **Demo-vs-live caveat carries over unchanged** from the swap-rate
+  permanent-baseline decision (`research/S1_SWAP_RATES_SNAPSHOT_V2.md`)
+  — one disclosure, not a new gate.
+
+This rule is implemented in `research/sample_fx_spreads.py`'s
+`historical_entry_distribution()` and `print_summary()`, verified via
+synthetic-data round-trip tests (full coverage → weighted recommendation
+computed; partial coverage → explicitly refuses to compute one) before
+any real sampling data existed.
+
