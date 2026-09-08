@@ -16,12 +16,14 @@ def test_total_cost_scales_linearly_with_size():
 
 
 def test_total_cost_known_value_usdjpy():
-    # USDJPY: spread_pips=1.5, pip_size=0.01, pip_value=9.10,
-    # slippage=1.0 (default). size=0.0733 (matches test_simulator.py's
-    # Trade A). PLUS commission (added 2026-08-20): USDJPY is in
-    # COMMISSION_APPLIES_TO, $7.00/lot round-turn.
+    # USDJPY: spread_pips=1.5, pip_value=9.10 (dollars per pip per
+    # standard lot -- NOT multiplied by pip_size again, see
+    # tests/test_cost_model_spec.py for the full derivation and
+    # execution/costs.py's fix commit). slippage=1.0 (default).
+    # size=0.0733 (matches test_simulator.py's Trade A). PLUS
+    # commission: USDJPY in COMMISSION_APPLIES_TO, $7.00/lot round-turn.
     cost = total_cost("USDJPY", size=0.0733, slippage_pips=1.0)
-    expected = (1.5 * 0.01 * 9.10 + 1.0 * 0.01 * 9.10) * 0.0733 + 7.00 * 0.0733
+    expected = (1.5 * 9.10 + 1.0 * 9.10) * 0.0733 + 7.00 * 0.0733
     assert cost == pytest.approx(expected)
 
 

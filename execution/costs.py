@@ -135,8 +135,21 @@ def total_cost(symbol: str, size: float, direction: int = 1, entry_dt=None,
             f"regardless of this flag; see RESEARCH_PROGRAM.md Sec 6."
         )
     meta        = get_meta(symbol)
-    spread_cost = meta["spread_pips"]  * meta["pip_size"] * meta["pip_value"] * size
-    slip_cost   = slippage_pips        * meta["pip_size"] * meta["pip_value"] * size
+    # FIX (confirmed via tests/test_cost_model_spec.py, hand-computed
+    # against pip_value's own documented units): pip_value is ALREADY
+    # dollars-per-pip-per-standard-lot -- confirmed by its use
+    # everywhere else in this codebase (execution/simulator.py's
+    # `pnl_gross = pnl_pips * pip_value * size`, risk/sizing.py's
+    # `risk_per_lot = stop_pips * pip_value`), neither of which
+    # multiplies by pip_size again. This formula previously did,
+    # making spread/slip ~10,000x too small for EURUSD (1 correct pip
+    # of spread = $10/lot; the bug computed $0.001/lot). Found while
+    # sourcing AUDUSD's real spec (8cd2642), confirmed and fixed here.
+    # Every prior hypothesis's cost +50% stress test ran against this
+    # near-zero spread/slip term -- see docs/COST_MODEL_V3_SPREAD_FIX.md
+    # for the re-verification this requires.
+    spread_cost = meta["spread_pips"]  * meta["pip_value"] * size
+    slip_cost   = slippage_pips        * meta["pip_value"] * size
     commission  = commission_cost(symbol, size)
     swap        = 0.0
     if entry_dt is not None and exit_dt is not None:

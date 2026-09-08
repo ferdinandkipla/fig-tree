@@ -103,6 +103,23 @@ recompute. If it persists under a verified, materially different rate,
 that would falsify the swap-mechanism explanation given here and reopen
 the question of what's actually driving it.
 
+**STATUS UPDATE (2026-08-20): this prediction is now UNTESTABLE, not
+pending.** `research/S1_SWAP_RATES_SNAPSHOT_V2.md`'s "Decision" section
+records that IC Markets publishes no static swap-rate table for this
+broker — checked directly, not assumed — so "re-source from a verified,
+non-demo source" is not achievable via any available public sourcing.
+The gate this prediction depended on was reframed to "demo-sourced,
+refreshed periodically, cross-checked for plausibility" rather than
+resolved by data. The refreshed 08-20 rates (−57.294/+39.452) moved in
+the OPPOSITE direction the prediction's "falsifies if smaller/less
+asymmetric" branch would need — magnitude grew, asymmetry held steady —
+which is consistent with (does not falsify) the swap-mechanism
+explanation, but this is a same-tier-source refresh, not the
+independent verification the prediction was designed to test against.
+Recorded here so a future reader does not read this section as an open
+question awaiting data that will arrive — it will not, under this
+broker, and the prediction's design implicitly assumed it would.
+
 ## 5. Provenance disclosure — standing rule from H-009, applied here
 
 TRAIN-window outcome data for XAUUSD's ema_distance × cost-model
