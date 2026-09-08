@@ -16,11 +16,12 @@ def test_total_cost_scales_linearly_with_size():
 
 
 def test_total_cost_known_value_usdjpy():
-    # USDJPY: spread_pips=1.5 (per core/instruments.py fixture used in
-    # test_simulator.py), pip_size=0.01, pip_value=9.10, slippage=1.0
-    # (default). size=0.0733 (matches test_simulator.py's Trade A).
+    # USDJPY: spread_pips=1.5, pip_size=0.01, pip_value=9.10,
+    # slippage=1.0 (default). size=0.0733 (matches test_simulator.py's
+    # Trade A). PLUS commission (added 2026-08-20): USDJPY is in
+    # COMMISSION_APPLIES_TO, $7.00/lot round-turn.
     cost = total_cost("USDJPY", size=0.0733, slippage_pips=1.0)
-    expected = (1.5 * 0.01 * 9.10 + 1.0 * 0.01 * 9.10) * 0.0733
+    expected = (1.5 * 0.01 * 9.10 + 1.0 * 0.01 * 9.10) * 0.0733 + 7.00 * 0.0733
     assert cost == pytest.approx(expected)
 
 
@@ -57,9 +58,9 @@ def test_swap_cost_matches_hand_computation_long_one_night():
     exit_ = datetime(2024, 1, 10, 10, 0)
     size = 2.0
     result = swap_cost("USDJPY", size=size, direction=1, entry_dt=entry, exit_dt=exit_)
-    # hand computation: rate=SWAP_RATES['USDJPY']['long']=8.752 (credit
-    # convention in the snapshot) -> cost = -rate * size * nights
-    expected = -8.752 * size * 1
+    # rate=SWAP_RATES['USDJPY']['long']=8.131 (refreshed 2026-08-20,
+    # research/S1_SWAP_RATES_SNAPSHOT_V2.md -- was 8.752 pre-refresh)
+    expected = -8.131 * size * 1
     assert result == pytest.approx(expected)
 
 
@@ -69,7 +70,9 @@ def test_swap_cost_matches_hand_computation_short_across_wednesday():
     exit_ = datetime(2024, 1, 11, 10, 0)
     size = 0.5
     result = swap_cost("GBPJPY", size=size, direction=-1, entry_dt=entry, exit_dt=exit_)
-    expected = -(-23.758) * size * 4  # rate = SWAP_RATES['GBPJPY']['short']
+    # rate = SWAP_RATES['GBPJPY']['short'] = -22.900 (refreshed 2026-08-20;
+    # was -23.758 pre-refresh)
+    expected = -(-22.900) * size * 4
     assert result == pytest.approx(expected)
 
 
@@ -79,7 +82,9 @@ def test_swap_cost_matches_hand_computation_multi_day():
     exit_ = datetime(2024, 1, 12, 10, 0)
     size = 1.25
     result = swap_cost("EURUSD", size=size, direction=1, entry_dt=entry, exit_dt=exit_)
-    expected = -(-8.166) * size * 6
+    # rate = SWAP_RATES['EURUSD']['long'] = -8.276 (refreshed 2026-08-20;
+    # was -8.166 pre-refresh)
+    expected = -(-8.276) * size * 6
     assert result == pytest.approx(expected)
 
 
@@ -103,15 +108,23 @@ def test_zero_crossing_population_swap_is_exactly_zero():
                 )
 
 
-def test_total_cost_blocks_audusd_by_default():
+def test_total_cost_blocks_placeholder_instruments_by_default(monkeypatch):
+    # AUDUSD was the placeholder instrument this test originally checked
+    # against; RESOLVED 2026-08-20 (spread live-sampled, swap accepted,
+    # commission sourced) and PLACEHOLDER_INSTRUMENTS is now empty.
+    # Testing the block MECHANISM generically via monkeypatch rather than
+    # asserting a point-in-time fact that's no longer true.
+    import execution.costs as costs_module
+    monkeypatch.setattr(costs_module, "PLACEHOLDER_INSTRUMENTS", {"USDJPY"})
     with pytest.raises(PlaceholderInstrumentError):
-        total_cost("AUDUSD", size=1.0)
+        costs_module.total_cost("USDJPY", size=1.0)
 
 
-def test_total_cost_allows_audusd_with_explicit_flag():
-    # Should not raise.
-    cost = total_cost("AUDUSD", size=1.0, allow_placeholder=True)
-    assert cost > 0  # spread+slip still positive even under placeholder specs
+def test_total_cost_allows_placeholder_instrument_with_explicit_flag(monkeypatch):
+    import execution.costs as costs_module
+    monkeypatch.setattr(costs_module, "PLACEHOLDER_INSTRUMENTS", {"USDJPY"})
+    cost = costs_module.total_cost("USDJPY", size=1.0, allow_placeholder=True)
+    assert cost > 0
 
 
 def test_total_cost_non_placeholder_symbols_unaffected_by_flag():
@@ -126,5 +139,6 @@ def test_total_cost_includes_swap_when_dates_provided():
     without_swap = total_cost("USDJPY", size=1.0)  # no dates -> swap=0
     with_swap = total_cost("USDJPY", size=1.0, direction=1, entry_dt=entry, exit_dt=exit_)
     assert with_swap != pytest.approx(without_swap)
-    expected_swap = -8.752 * 1.0 * 1
+    # rate = SWAP_RATES['USDJPY']['long'] = 8.131 (refreshed 2026-08-20)
+    expected_swap = -8.131 * 1.0 * 1
     assert (with_swap - without_swap) == pytest.approx(expected_swap)
