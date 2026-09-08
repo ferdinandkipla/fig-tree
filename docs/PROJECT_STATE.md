@@ -48,12 +48,21 @@ See `docs/PHASE3_CLOSURE.md` for the explicit decision record. Charter:
   15 tests including a regression test for the stale-session-column bug
   caught during H-008). Unblocks all future Batch 2 interaction
   hypotheses.
-- **Cost model v2 (swap integration): DONE and independently
-  re-verified.** Implementation landed `e0d3637`/`4feb84c` (size-scaling
-  fix + swap cost + AUDUSD hard-block). Re-verification across all 7
-  cost-exposed items (M2, H-001–H-006) closed `a42a7aa` — see Section 4a
-  below. Zero overall verdict flips; three sub-criterion near-misses
-  documented and closed.
+- **Cost model v2/v3: implementation landed, re-verification STALE —
+  NOT marked DONE.** `e0d3637`/`4feb84c` (size-scaling + swap +
+  AUDUSD hard-block), `0080a82` (swap refresh + commission), `2a3be6c`
+  (spread/slip pip_size-doubling fix — see
+  `docs/COST_MODEL_V3_SPREAD_FIX.md`) have all landed. **The 7-item
+  re-verification (`a42a7aa`) predates all three of the swap refresh,
+  commission addition, and the spread-formula fix — it verified a cost
+  model that no longer exists.** Per explicit instruction: do not carry
+  a DONE label against a known-stale verification. Status is DONE only
+  once the combined re-run (corrected spread formula + live-sampled
+  USDJPY/GBPJPY/EURUSD spreads + 08-20 swap + commission, one pass) is
+  appended as Section 13+ of `research/registry/FINDING-xauusd-swap-sensitivity-h001.md`.
+  Kill-asymmetry argument (larger correct costs can only strengthen a
+  kill) makes a verdict flip unlikely, but "unlikely" is not
+  "verified" — see Section 4a below for the full staleness detail.
 
 ## 3. Data
 
@@ -261,7 +270,7 @@ verification layer works; report it, never hide it.
 |---|---|
 | Re-canonicalize trade-CSV hashes (direction column) | DONE (`25db12b`) |
 | Migration verifier script | DONE (`research/verify_schema_migration.py`) |
-| Cost model v2 (swap integration) | DONE (`e0d3637`/`4feb84c`), re-verified across 7 items (`a42a7aa`, Section 4a) |
+| Cost model v2/v3 (swap + commission + spread formula) | **Implementation DONE, re-verification NOT DONE.** `e0d3637`/`4feb84c`/`0080a82`/`2a3be6c` all landed. `a42a7aa`'s 7-item re-verification predates all three of the swap refresh, commission addition, and spread-formula fix — see Section 4a. Combined re-run (spread fix + sampled spreads + 08-20 swap + commission, one pass) required before this is marked DONE. |
 | XAUUSD swap-rate re-sourcing (verified, non-demo source) | **RESOLVED AS: not achievable, reframed (2026-08-20).** IC Markets publishes no static swap table for this broker (confirmed via direct check of their own material — swap rates are stated as "Variable, check platform"). Decision: demo-sourced rates accepted as the permanent baseline, refreshed periodically, cross-checked for plausibility (not exact-value verification) against an independent broker's published numbers. Full record: `research/S1_SWAP_RATES_SNAPSHOT_V2.md`. **New follow-on debt created by this refresh: cost-model-v2 re-verification (Section 4a) was run against the now-superseded 7/24 values and has not been re-run against the 8/20 values.** |
 | US500/DXY data-availability check | **DONE (2026-08-20)** — US500 confirmed onboardable (history from 2018-12-31); DXY confirmed disqualified for this phase (dated futures contract only, no roll-handling in this codebase; formal record `research/CONDITIONAL_SEARCH_CHARTER.md` §4a). |
 | US500 real data ingestion (H4/1H into `data/storage/`) | **DONE (2026-08-20)** — `data/storage/US500_16388.csv` (9879 rows, 2019-01-02→2025-05-30), `data/storage/US500_16385.csv` (37862 rows, 2018-12-31→2025-05-30). Provenance: `research/S1_US500_ONBOARDING_SNAPSHOT.md`. **Hash-pinning caveat, discovered this commit:** the onboarding script's run-time SHA-256 did not match the git-stored file's hash — Windows `core.autocrlf` silently normalized line endings between the script's write and the commit. Corrected in the snapshot doc, `.gitattributes` added (`eol=lf` on csv/py/md) to prevent recurrence. **Not yet independently checked: whether the original 5 instruments' `data/storage/*.csv` (same `data.loader.fetch()` code path, committed pre-dating this discovery) have the same undetected divergence between their originally-claimed and actually-git-stored hashes.** Flagged, not resolved. |
