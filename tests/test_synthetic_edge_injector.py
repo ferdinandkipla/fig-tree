@@ -105,6 +105,26 @@ def test_run_single_trial_detects_very_large_injected_edge():
     assert result.detected is True
 
 
+def test_load_pooled_trades_produces_seed_column():
+    """
+    REGRESSION TEST for a bug caught on first real-data run: the actual
+    research/null_runs_h004/ CSVs do NOT store a 'seed' column (unlike
+    this file's synthetic test fixtures, which do) -- seed is only
+    recoverable from the filename. load_pooled_trades() must extract
+    it, or seed_dispersion_check() fails with a KeyError the moment
+    real data is used, which is exactly what happened before this test
+    was added.
+    """
+    from research.synthetic_edge_injector import load_pooled_trades
+    import os
+    if not os.path.exists("research/null_runs_h004"):
+        pytest.skip("research/null_runs_h004 not present in this environment")
+    pooled = load_pooled_trades("EURUSD")
+    assert "seed" in pooled.columns
+    assert pooled["seed"].nunique() > 1  # multiple seeds actually loaded
+    assert pooled["seed"].dtype.kind in "iu"  # integer, not object/string
+
+
 def test_run_single_trial_zero_edge_rarely_detects():
     """A zero injected edge should almost never pass both gates --
     run a handful of trials and confirm the detection rate is low

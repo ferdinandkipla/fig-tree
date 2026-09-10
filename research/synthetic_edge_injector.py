@@ -10,6 +10,7 @@
 # points.
 
 import glob
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -18,10 +19,18 @@ import pandas as pd
 
 def load_pooled_trades(symbol: str, train_end: str = "2022-01-01") -> pd.DataFrame:
     """Pooled 100-seed TRAIN-window null trades for one instrument,
-    same data source as H-005/H-008/H-009."""
+    same data source as H-005/H-008/H-009. Adds a 'seed' column
+    extracted from each file's filename (not stored in the file
+    itself -- same convention as research/run_h008.py's
+    _load_pooled_top_tercile), required by seed_dispersion_check()."""
     frames = []
     for path in glob.glob(f"research/null_runs_h004/{symbol}_H1_seed*_trades.csv"):
+        m = re.search(r"_seed(\d+)_trades\.csv$", path)
+        if not m:
+            continue
+        seed = int(m.group(1))
         df = pd.read_csv(path, parse_dates=["entry_dt"])
+        df["seed"] = seed
         frames.append(df)
     pooled = pd.concat(frames, ignore_index=True)
     pooled = pooled[pooled["entry_dt"] < train_end].reset_index(drop=True)
