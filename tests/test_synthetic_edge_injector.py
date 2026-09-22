@@ -15,6 +15,7 @@ from research.synthetic_edge_injector import (
     max_deviation_permutation_test,
     seed_dispersion_check,
     run_single_trial,
+    run_compound_trial,
 )
 
 
@@ -142,3 +143,63 @@ def test_run_single_trial_zero_edge_rarely_detects():
         if result.detected:
             detections += 1
     assert detections <= 3  # generous bound, alpha=0.05 predicts ~0-1 of 10
+
+
+# ── Compound cross-instrument-gate trial ────────────────────────────
+# Per research/POWER_CALIBRATION_PLAN.md Sec 1's compound-gate design,
+# replicating research/run_h005.py's EXACT combination rule (confirmed
+# by direct inspection: `survives = consistent_best and
+# n_sig_and_real >= 4`, p<0.01, not the single-instrument curve's
+# looser p<0.05 default).
+
+def _synthetic_pooled_by_symbol(n_symbols=5, n=300, base_seed=0):
+    return {
+        f"SYM{i}": _synthetic_pooled(n=n, seed=base_seed + i)
+        for i in range(n_symbols)
+    }
+
+
+def test_compound_trial_enormous_edge_on_all_symbols_clears_everything():
+    """A huge, unambiguous edge on every symbol should clear the
+    individual gate on all of them and agree in direction everywhere."""
+    pooled_by_symbol = _synthetic_pooled_by_symbol()
+    pip_values = {sym: 10.0 for sym in pooled_by_symbol}
+    rng = np.random.default_rng(42)
+    result = run_compound_trial(
+        pooled_by_symbol, pip_values, edge_pips=1000.0,
+        treatment_fraction=0.5, n_permutations=200, rng=rng,
+    )
+    assert result.n_individually_clear == len(pooled_by_symbol)
+    assert result.direction_consistent is True
+    assert result.compound_survives is True
+
+
+def test_compound_trial_zero_edge_rarely_compound_survives():
+    """No true edge anywhere -- the compound standard (direction
+    consistency across ALL symbols AND >=4/5 individually clearing at
+    p<0.01) should almost never spuriously survive; far stricter than
+    any single instrument's own false-positive rate."""
+    pooled_by_symbol = _synthetic_pooled_by_symbol()
+    pip_values = {sym: 10.0 for sym in pooled_by_symbol}
+    survivals = 0
+    for i in range(10):
+        rng = np.random.default_rng(200 + i)
+        result = run_compound_trial(
+            pooled_by_symbol, pip_values, edge_pips=0.0,
+            treatment_fraction=0.5, n_permutations=200, rng=rng,
+        )
+        if result.compound_survives:
+            survivals += 1
+    assert survivals == 0  # compound standard is strict; zero-edge should never pass it in 10 trials
+
+
+def test_compound_trial_uses_stricter_alpha_than_single_instrument_default():
+    """Confirms the compound trial's default alpha (0.01) is stricter
+    than run_single_trial's default (0.05) -- this distinction is the
+    whole point of replicating H-005's real standard rather than the
+    single-instrument curve's looser threshold."""
+    import inspect
+    single_sig = inspect.signature(run_single_trial)
+    compound_sig = inspect.signature(run_compound_trial)
+    assert single_sig.parameters["alpha"].default == 0.05
+    assert compound_sig.parameters["alpha"].default == 0.01

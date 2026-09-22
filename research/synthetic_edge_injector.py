@@ -122,3 +122,62 @@ def run_single_trial(pooled: pd.DataFrame, symbol: str, edge_pips: float, pip_va
     detected = bool((p_value < alpha) and (not np.isnan(max_dispersion)) and (observed_stat > max_dispersion))
     return DetectionResult(edge_pips=edge_pips, p_value=p_value, observed_stat=observed_stat,
                             max_dispersion=max_dispersion, detected=detected)
+
+
+@dataclass
+class CompoundTrialResult:
+    edge_pips: float
+    n_individually_clear: int  # out of len(symbols), at p<0.01 AND effect>dispersion
+    direction_consistent: bool  # treatment mean > control mean on EVERY symbol
+    compound_survives: bool  # the ACTUAL H-005 standard: direction_consistent AND n_individually_clear >= threshold
+
+
+def run_compound_trial(pooled_by_symbol: dict, pip_values: dict, edge_pips: float,
+                        treatment_fraction: float, n_permutations: int,
+                        rng: np.random.Generator, alpha: float = 0.01,
+                        min_clear: int = 4) -> CompoundTrialResult:
+    """
+    Replicates research/run_h005.py's EXACT compound standard
+    (confirmed by direct inspection of compute_verdict(), not assumed):
+    `survives = consistent_best and n_sig_and_real >= 4`, where
+    n_sig_and_real uses p<0.01 (FDR-adjusted threshold in the real
+    hypothesis, NOT the single-instrument curve's looser p<0.05
+    default) AND effect_exceeds_noise, and consistent_best requires
+    direction agreement across ALL instruments -- for this binary
+    treatment/control injection design, the direct analog of "best
+    tercile matches across instruments" is "treatment mean exceeds
+    control mean on every single instrument" (both are "the
+    sign/direction of the effect agrees everywhere").
+
+    Injects the SAME edge_pips into ALL instruments independently
+    (independent random treatment/control split per instrument, own
+    pip_value each), consistent with research/POWER_CALIBRATION_PLAN.md
+    Sec 1's compound-gate design.
+    """
+    n_clear = 0
+    directions = []
+    for symbol, pooled in pooled_by_symbol.items():
+        n = len(pooled)
+        treatment_mask = rng.random(n) < treatment_fraction
+        injected = inject_edge(pooled, symbol, treatment_mask, edge_pips, pip_values[symbol])
+        pnl = injected["pnl"].values
+        group = injected["_treatment"].values
+
+        observed_stat, p_value, observed_means = max_deviation_permutation_test(
+            pnl, group, n_permutations, rng)
+        _, max_dispersion = seed_dispersion_check(injected, "_treatment")
+
+        clears = bool((p_value < alpha) and (not np.isnan(max_dispersion))
+                       and (observed_stat > max_dispersion))
+        if clears:
+            n_clear += 1
+        # Direction: does treatment (True) exceed control (False)?
+        treat_mean = observed_means.get(True, float("nan"))
+        control_mean = observed_means.get(False, float("nan"))
+        directions.append(treat_mean > control_mean)
+
+    direction_consistent = all(directions)
+    compound_survives = direction_consistent and (n_clear >= min_clear)
+    return CompoundTrialResult(edge_pips=edge_pips, n_individually_clear=n_clear,
+                                direction_consistent=direction_consistent,
+                                compound_survives=compound_survives)
