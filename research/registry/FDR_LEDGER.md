@@ -37,6 +37,33 @@ See the Family column below.
 | H-005 | volatility regime (NEW family) | commit `391e6d5` | KILLED | best tercile inconsistent (T1 on 2/5, T3 on 3/5); p=0.006 on GBPJPY clears FDR threshold but effect < seed noise | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | 1H, signed null, ATR-at-entry terciles; analysis-only on H-004's existing data |
 | H-006 | day-of-week (NEW family) | commit `3b2e4c8` | KILLED | Thursday best on 4/5 (near-consistent, not unanimous); 0/5 clear the dispersion check | USDJPY, XAUUSD, GBPJPY, EURUSD, AUDUSD | 1H, signed null, day-of-week buckets; analysis-only on H-004's existing data |
 
+**CORRECTION (dated, this entry): H-002 and H-004 are ONE hypothesis
+family (session structure), not two independent tests, and the ledger
+above has been mischaracterizing them as independent — caught during
+external review, verified directly against the rows above before
+being accepted.** Both test session structure on the same instruments;
+H-004 is H-002 re-run at 1H instead of H4, sharing the same underlying
+mechanism claim. Both died with the IDENTICAL signature: nominal
+significance on a subset of instruments (H-002: GBPJPY; H-004:
+USDJPY, GBPJPY), with effect magnitude smaller than seed-to-seed
+dispersion in every case. This is not two independent pieces of
+evidence against session structure — it is the same finding observed
+at two timeframes.
+
+**FDR consequence, stated plainly:** the ledger's implicit "6
+independent Batch 1 families, all killed" framing overstates how
+closed the session-structure question is. Treated correctly as one
+family with two timeframe-replications, Batch 1 killed **5 independent
+families** (pullback-depth, session-structure, time-exit-value,
+volatility-regime, day-of-week), not 6. This does not change any
+verdict — both H-002 and H-004 remain independently KILLED on their
+own terms — but it means "session structure" carries less accumulated
+disconfirmation than a naive family count would suggest, and a future
+session-structure candidate (e.g. a genuinely different operationalization,
+not a third timeframe re-run) should not be waved off on the grounds
+that "this family has already been tested twice." It has been tested
+once, at two resolutions.
+
 **Total hypotheses adjudicated: 6. Survivals: 0. Sub-families: 5**
 (pullback-depth: 1, session-structure: 2, exit-rule: 1, volatility-regime: 1, day-of-week: 1).
 
